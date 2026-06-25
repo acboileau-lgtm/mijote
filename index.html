@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f3ea">
+  <title>Mijoté — Menus de la semaine</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Accueil Mijoté">
+        <span class="brand-mark">M</span>
+        <span>Mijoté</span>
+      </a>
+
+      <nav class="main-nav" aria-label="Navigation principale">
+        <button class="nav-item active" data-view="planning"><span>▦</span> Ma semaine</button>
+        <button class="nav-item" data-view="recipes"><span>♨</span> Mes recettes</button>
+        <button class="nav-item" data-view="shopping"><span>✓</span> Liste de courses <b id="shoppingBadge">8</b></button>
+        <button class="nav-item" data-view="fridge"><span>◇</span> Mon frigo</button>
+      </nav>
+
+      <div class="sidebar-tip">
+        <span class="tip-icon">✦</span>
+        <p><strong>Astuce anti-gaspi</strong><br>3 aliments sont à utiliser rapidement.</p>
+        <button data-view-link="fridge">Voir mon frigo →</button>
+      </div>
+
+      <div class="profile">
+        <div class="avatar">CM</div>
+        <div><strong>Chez nous</strong><small>4 personnes</small></div>
+        <button aria-label="Réglages">•••</button>
+      </div>
+    </aside>
+
+    <main>
+      <header class="mobile-header">
+        <a class="brand" href="#"><span class="brand-mark">M</span><span>Mijoté</span></a>
+        <button id="menuToggle" aria-label="Ouvrir le menu">☰</button>
+      </header>
+
+      <section class="view active" id="planning">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">DU 24 AU 30 JUIN</p>
+            <h1>Bonjour, qu’est-ce qu’on mange ?</h1>
+            <p>Votre semaine est presque prête. Encore quelques repas à prévoir.</p>
+          </div>
+          <button class="primary-button" id="autoPlan">✦ Compléter ma semaine</button>
+        </div>
+
+        <div class="week-toolbar">
+          <button class="icon-button" aria-label="Semaine précédente">←</button>
+          <button class="today-button">Cette semaine</button>
+          <button class="icon-button" aria-label="Semaine suivante">→</button>
+          <span class="toolbar-spacer"></span>
+          <button class="secondary-button" id="clearWeek">Effacer</button>
+          <button class="secondary-button" data-view-link="shopping">Générer les courses</button>
+        </div>
+
+        <div class="week-grid" id="weekGrid"></div>
+
+        <section class="bottom-card">
+          <div class="bottom-card-copy">
+            <span class="soft-icon">☘</span>
+            <div><strong>Votre semaine en un coup d’œil</strong><p>5 repas planifiés · 2 végétariens · environ 2 h 15 de cuisine</p></div>
+          </div>
+          <div class="legend"><span><i class="dot veggie"></i> Végétarien</span><span><i class="dot quick"></i> Moins de 30 min</span></div>
+        </section>
+      </section>
+
+      <section class="view" id="recipes">
+        <div class="page-heading">
+          <div><p class="eyebrow">VOTRE CARNET</p><h1>Mes recettes</h1><p>Gardez toutes vos bonnes idées au même endroit.</p></div>
+          <button class="primary-button" id="openRecipeModal">＋ Ajouter une recette</button>
+        </div>
+        <div class="filters">
+          <label class="search"><span>⌕</span><input id="recipeSearch" placeholder="Rechercher une recette…"></label>
+          <button class="filter-chip active" data-filter="all">Toutes</button>
+          <button class="filter-chip" data-filter="veggie">Végétariennes</button>
+          <button class="filter-chip" data-filter="quick">Rapides</button>
+        </div>
+        <div class="recipe-grid" id="recipeGrid"></div>
+      </section>
+
+      <section class="view" id="shopping">
+        <div class="page-heading">
+          <div><p class="eyebrow">POUR CETTE SEMAINE</p><h1>Liste de courses</h1><p>Les ingrédients de vos menus, rangés par rayon.</p></div>
+          <div class="heading-actions"><button class="secondary-button" id="uncheckAll">Tout décocher</button><button class="primary-button" id="addShopping">＋ Ajouter</button></div>
+        </div>
+        <div class="shopping-progress">
+          <div><strong id="progressText">0 sur 8 articles</strong><span>Votre panier avance tranquillement</span></div>
+          <div class="progress-track"><i id="progressBar"></i></div>
+        </div>
+        <div class="shopping-layout">
+          <div id="shoppingList"></div>
+          <aside class="summary-card">
+            <span class="soft-icon">☘</span>
+            <h3>Bien joué !</h3>
+            <p>Cette liste tient compte des produits déjà présents dans votre frigo.</p>
+            <hr>
+            <p class="summary-line"><span>Repas prévus</span><strong id="plannedCount">5</strong></p>
+            <p class="summary-line"><span>Articles à acheter</span><strong id="remainingCount">8</strong></p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="fridge">
+        <div class="page-heading">
+          <div><p class="eyebrow">VOS RÉSERVES</p><h1>Mon frigo</h1><p>Voyez ce que vous avez et cuisinez avant que ça ne se perde.</p></div>
+          <button class="primary-button" id="addFridge">＋ Ajouter un aliment</button>
+        </div>
+        <div class="fridge-alert"><span>!</span><div><strong>À consommer bientôt</strong><p>Trois aliments arrivent à leur date limite. Une omelette aux légumes ferait parfaitement l’affaire.</p></div><button data-view-link="recipes">Voir les idées →</button></div>
+        <div class="fridge-grid" id="fridgeGrid"></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-nav">
+    <button class="active" data-view="planning"><span>▦</span>Semaine</button>
+    <button data-view="recipes"><span>♨</span>Recettes</button>
+    <button data-view="shopping"><span>✓</span>Courses</button>
+    <button data-view="fridge"><span>◇</span>Frigo</button>
+  </nav>
+
+  <dialog id="modal">
+    <form method="dialog" id="modalForm">
+      <button class="modal-close" value="cancel" aria-label="Fermer">×</button>
+      <p class="eyebrow" id="modalEyebrow">NOUVELLE RECETTE</p>
+      <h2 id="modalTitle">Ajouter une recette</h2>
+      <div id="modalFields"></div>
+      <div class="modal-actions"><button class="secondary-button" value="cancel">Annuler</button><button class="primary-button" value="default" id="modalSubmit">Enregistrer</button></div>
+    </form>
+  </dialog>
+  <div id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
