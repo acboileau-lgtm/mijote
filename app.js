@@ -47,13 +47,43 @@ if (state.weekStart !== "wednesday") {
   localStorage.setItem("mijote-state", JSON.stringify(state));
 }
 
-const days = [
-  ["Mer.", "24"], ["Jeu.", "25"], ["Ven.", "26"], ["Sam.", "27"], ["Dim.", "28"], ["Lun.", "29"], ["Mar.", "30"]
-];
+// Temporaire : on remplacera complètement ce tableau.
+let currentDate = new Date();
+
+// Ancien calendrier (conservé quelques minutes pendant la transition)
+// const days = [
+//   ["Mer.", "24"], ["Jeu.", "25"], ["Ven.", "26"], ["Sam.", "27"], ["Dim.", "28"], ["Lun.", "29"], ["Mar.", "30"]
+// ];
+
 const slotNames = { lunch: "DÉJEUNER", dinner: "DÎNER" };
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const save = () => localStorage.setItem("mijote-state", JSON.stringify(state));
+function getWeekDays() {
+  const dayNames = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
+
+  const start = new Date(currentDate);
+
+  // Jour souhaité : mercredi = 3
+  const wantedDay = 3;
+
+  const diff = (start.getDay() - wantedDay + 7) % 7;
+  start.setDate(start.getDate() - diff);
+
+  const days = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+
+    days.push([
+      dayNames[d.getDay()],
+      d.getDate()
+    ]);
+  }
+
+  return days;
+}
 
 function showToast(message) {
   const toast = $("#toast");
@@ -70,7 +100,9 @@ function navigate(view) {
 }
 
 function renderWeek() {
-  $("#weekGrid").innerHTML = days.map(([name, date], day) => `
+ const days = getWeekDays();
+
+$("#weekGrid").innerHTML = days.map(([name, date], day) => `
     <article class="day-column ${day === 1 ? "today" : ""}">
       <header class="day-header"><strong>${name}</strong><span>${date}</span></header>
       ${["lunch", "dinner"].map(slot => renderSlot(day, slot)).join("")}
