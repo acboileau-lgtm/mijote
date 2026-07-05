@@ -44,7 +44,7 @@
       <section class="view active" id="planning">
         <div class="page-heading">
           <div>
-            <p class="eyebrow">DU 24 AU 30 JUIN</p>
+            <p class="eyebrow" id="weekTitle">DU 24 AU 30 JUIN</p>
             <h1>Bonjour, qu’est-ce qu’on mange ?</h1>
             <p>Votre semaine est presque prête. Encore quelques repas à prévoir.</p>
           </div>
@@ -52,9 +52,9 @@
         </div>
 
         <div class="week-toolbar">
-          <button class="icon-button" aria-label="Semaine précédente">←</button>
-          <button class="today-button">Cette semaine</button>
-          <button class="icon-button" aria-label="Semaine suivante">→</button>
+          <button class="icon-button" id="prevWeek" aria-label="Semaine précédente">←</button>
+          <button class="today-button" id="todayWeek">Cette semaine</button>
+          <button class="icon-button" id="nextWeek" aria-label="Semaine suivante">→</button>
           <span class="toolbar-spacer"></span>
           <button class="secondary-button" id="clearWeek">Effacer</button>
           <button class="secondary-button" data-view-link="shopping">Générer les courses</button>

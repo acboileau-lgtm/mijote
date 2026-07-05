@@ -76,10 +76,11 @@ function getWeekDays() {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
 
-    days.push([
-      dayNames[d.getDay()],
-      d.getDate()
-    ]);
+    days.push({
+    name: dayNames[d.getDay()],
+    day: d.getDate(),
+    date: new Date(d)
+    });
   }
 
   return days;
@@ -101,14 +102,37 @@ function navigate(view) {
 
 function renderWeek() {
  const days = getWeekDays();
+ const today = new Date();
 
-$("#weekGrid").innerHTML = days.map(([name, date], day) => `
-    <article class="day-column ${day === 1 ? "today" : ""}">
-      <header class="day-header"><strong>${name}</strong><span>${date}</span></header>
+$("#weekGrid").innerHTML = days.map((dayInfo, day) => `
+    <article class="day-column ${
+    dayInfo.date.toDateString() === today.toDateString()
+      ? "today"
+      : ""
+  }">
+      <header class="day-header">
+      <strong>${dayInfo.name}</strong>
+      <span>${dayInfo.day}</span>
+      </header>
       ${["lunch", "dinner"].map(slot => renderSlot(day, slot)).join("")}
     </article>`).join("");
   $("#plannedCount").textContent = Object.keys(state.meals).length;
 }
+
+const months = [
+  "JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN",
+  "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"
+];
+
+const firstDay = new Date(currentDate);
+const diff = (firstDay.getDay() - 3 + 7) % 7;
+firstDay.setDate(firstDay.getDate() - diff);
+
+const lastDay = new Date(firstDay);
+lastDay.setDate(firstDay.getDate() + 6);
+
+$("#weekTitle").textContent =
+  `DU ${firstDay.getDate()} AU ${lastDay.getDate()} ${months[lastDay.getMonth()]}`;
 
 function renderSlot(day, slot) {
   const key = `${day}-${slot}`;
@@ -418,6 +442,20 @@ $$(".filter-chip").forEach(btn => btn.addEventListener("click", () => {
   activeFilter = btn.dataset.filter; renderRecipes(activeFilter, $("#recipeSearch").value);
 }));
 $("#recipeSearch").addEventListener("input", e => renderRecipes(activeFilter, e.target.value));
+
+$("#todayWeek").addEventListener("click", () => {
+  currentDate = new Date();
+  renderWeek();
+  showToast("Retour à la semaine actuelle");
+});
+$("#prevWeek").addEventListener("click", () => {
+  currentDate.setDate(currentDate.getDate() - 7);
+  renderWeek();
+});
+$("#nextWeek").addEventListener("click", () => {
+  currentDate.setDate(currentDate.getDate() + 7);
+  renderWeek();
+});
 
 renderWeek();
 renderRecipes();
