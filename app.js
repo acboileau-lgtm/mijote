@@ -101,6 +101,8 @@ function navigate(view) {
 }
 
 function renderWeek() {
+  updateWeekTitle();
+
  const days = getWeekDays();
  const today = new Date();
 
@@ -119,20 +121,22 @@ $("#weekGrid").innerHTML = days.map((dayInfo, day) => `
   $("#plannedCount").textContent = Object.keys(state.meals).length;
 }
 
-const months = [
-  "JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN",
-  "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"
-];
+function updateWeekTitle() {
+  const months = [
+    "JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN",
+    "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"
+  ];
 
-const firstDay = new Date(currentDate);
-const diff = (firstDay.getDay() - 3 + 7) % 7;
-firstDay.setDate(firstDay.getDate() - diff);
+  const firstDay = new Date(currentDate);
+  const diff = (firstDay.getDay() - 3 + 7) % 7;
+  firstDay.setDate(firstDay.getDate() - diff);
 
-const lastDay = new Date(firstDay);
-lastDay.setDate(firstDay.getDate() + 6);
+  const lastDay = new Date(firstDay);
+  lastDay.setDate(firstDay.getDate() + 6);
 
-$("#weekTitle").textContent =
-  `DU ${firstDay.getDate()} AU ${lastDay.getDate()} ${months[lastDay.getMonth()]}`;
+  $("#weekTitle").textContent =
+    `DU ${firstDay.getDate()} AU ${lastDay.getDate()} ${months[lastDay.getMonth()]}`;
+}
 
 function renderSlot(day, slot) {
   const key = `${day}-${slot}`;
@@ -145,6 +149,8 @@ function renderSlot(day, slot) {
       </div>` : `<button class="add-meal" data-add-meal="${key}" aria-label="Ajouter un repas">＋</button>`}
   </div>`;
 }
+
+
 
 function moveMeal(sourceKey, targetKey) {
   if (!sourceKey || !targetKey || sourceKey === targetKey || !state.meals[sourceKey]) return;
