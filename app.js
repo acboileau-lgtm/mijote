@@ -229,7 +229,7 @@ function renderSlot(day, slot) {
           aria-label="Retirer"
         >×</button>
 
-        ${renderMealCard(recipe)}
+       ${renderMealCard(recipe, key)}
       `
       : `
         <button
@@ -243,12 +243,17 @@ function renderSlot(day, slot) {
 
 }
 
-function renderMealCard(recipe) {
+function renderMealCard(recipe, key) {
   if (!recipe) {
     return `<p>Aucun repas prévu</p>`;
   }
  return `
-<div class="meal-card ${recipe.color === "sage" ? "" : recipe.color}">
+  <div
+    class="meal-card ${recipe.color == "sage" ? "" : recipe.color}"
+    draggable="true"
+    data-drag-meal="${key}"
+    data-open-recipe="${recipe.id}"
+  >
     <strong>${recipe.name}</strong>
     <small>
         ${recipe.emoji}
