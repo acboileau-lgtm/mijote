@@ -102,6 +102,7 @@ function navigate(view) {
 
 function renderWeek() {
   updateWeekTitle();
+  updateTodayDate();
 
  const days = getWeekDays();
  const today = new Date();
@@ -138,18 +139,126 @@ function updateWeekTitle() {
     `DU ${firstDay.getDate()} AU ${lastDay.getDate()} ${months[lastDay.getMonth()]}`;
 }
 
+function updateTodayDate() {
+
+  const today = new Date();
+
+  const days = [
+    "Dimanche", "Lundi", "Mardi",
+    "Mercredi", "Jeudi", "Vendredi", "Samedi"
+  ];
+
+  const months = [
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  ];
+
+  $("#todayDate").textContent =
+    `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+
+    const firstDay = new Date(currentDate);
+    const diff = (firstDay.getDay() - 3 + 7) % 7;
+    firstDay.setDate(firstDay.getDate() - diff);
+
+    const todayIndex = Math.floor(
+    (today - firstDay) / (1000 * 60 * 60 * 24)
+    );
+
+    if (todayIndex < 0 || todayIndex > 6) {
+    $("#todayMeals").innerHTML = "";
+    return;
+    }
+
+    const lunchKey = `${todayIndex}-lunch`;
+    const dinnerKey = `${todayIndex}-dinner`;
+
+    const lunchRecipe = state.recipes.find(
+    r => r.id === state.meals[lunchKey]
+    );
+
+    const dinnerRecipe = state.recipes.find(
+    r => r.id === state.meals[dinnerKey]
+    );
+
+    $("#todayMeals").innerHTML = `
+    <div class="today-meal">
+      <h3>🌞 Déjeuner</h3>
+      ${
+        lunchRecipe
+          ? `
+            <div class="meal-card ${lunchRecipe.color}">
+              <strong>${lunchRecipe.name}</strong>
+              <small>${lunchRecipe.emoji} ${lunchRecipe.time} min · ${lunchRecipe.portions} pers.</small>
+            </div>
+          `
+          : "<p>Aucun repas prévu</p>"
+      }
+    </div>
+
+    <div class="today-meal">
+      <h3>🌙 Dîner</h3>
+      ${
+        dinnerRecipe
+          ? `
+            <div class="meal-card ${dinnerRecipe.color}">
+              <strong>${dinnerRecipe.name}</strong>
+              <small>${dinnerRecipe.emoji} ${dinnerRecipe.time} min · ${dinnerRecipe.portions} pers.</small>
+            </div>
+          `
+          : "<p>Aucun repas prévu</p>"
+      }
+    </div>
+  `;
+}
+
 function renderSlot(day, slot) {
   const key = `${day}-${slot}`;
   const recipe = state.recipes.find(r => r.id === state.meals[key]);
   return `<div class="meal-slot ${slot}" data-drop-meal="${key}">
-    <div class="slot-label">${slotNames[slot]}<span>${slot === "lunch" ? "☀" : "☾"}</span></div>
-    ${recipe ? `<button class="remove-meal" data-remove-meal="${key}" aria-label="Retirer">×</button>
-      <div class="meal-card ${recipe.color === "sage" ? "" : recipe.color}" draggable="true" data-drag-meal="${key}" data-open-recipe="${recipe.id}" title="Cliquer pour voir la recette · Glisser pour déplacer">
-        <strong>${recipe.name}</strong><small>${recipe.emoji} ${recipe.time} min · ${recipe.portions} pers.</small>
-      </div>` : `<button class="add-meal" data-add-meal="${key}" aria-label="Ajouter un repas">＋</button>`}
-  </div>`;
+  <div class="slot-label">
+    ${slotNames[slot]}
+    <span>${slot === "lunch" ? "☀" : "☾"}</span>
+  </div>
+
+  ${
+    recipe
+      ? `
+        <button
+          class="remove-meal"
+          data-remove-meal="${key}"
+          aria-label="Retirer"
+        >×</button>
+
+        ${renderMealCard(recipe)}
+      `
+      : `
+        <button
+          class="add-meal"
+          data-add-meal="${key}"
+          aria-label="Ajouter un repas"
+        >＋</button>
+      `
+  }
+</div>`;
+
 }
 
+function renderMealCard(recipe) {
+  if (!recipe) {
+    return `<p>Aucun repas prévu</p>`;
+  }
+ return `
+<div class="meal-card ${recipe.color === "sage" ? "" : recipe.color}">
+    <strong>${recipe.name}</strong>
+    <small>
+        ${recipe.emoji}
+        ${recipe.time} min ·
+        ${recipe.portions} pers.
+    </small>
+</div>
+`;
+
+}
 
 
 function moveMeal(sourceKey, targetKey) {
