@@ -64,6 +64,7 @@ const recipeModal = $("#recipeModal");
 const openRecipeModal = $("#openRecipeModal");
 const closeRecipeModal = $("#closeRecipeModal");
 const cancelRecipe = $("#cancelRecipe");
+const recipeSearch = $("#recipeSearch");
 
 const ingredientsList = $("#ingredientsList");
 const addIngredient = $("#addIngredient");
@@ -119,17 +120,19 @@ recipeForm.addEventListener("submit", (event) => {
     const recipeId = recipeForm.dataset.recipeId;
 
     const recipe = {
-        id: recipeId || crypto.randomUUID(),
-        name,
-        emoji,
-        time,
-        portions,
+      id: crypto.randomUUID(),
+      name,
+      emoji,
+      time,
+      portions,
 
-        veggie: false,
-        tags: [],
+      favorite: false,
 
-        ingredients,
-        steps
+      veggie: false,
+      tags: [],
+
+      ingredients,
+      steps
     };
 
         
@@ -147,6 +150,7 @@ recipeForm.addEventListener("submit", (event) => {
     state.recipes.push(recipe);
 
 }
+
 
 save();
 renderRecipes();
@@ -190,6 +194,12 @@ cancelRecipe.addEventListener("click", () => {
     recipeModal.classList.add("hidden");
 });
 
+recipeSearch.addEventListener("input", () => {
+    console.log(recipeSearch.value);
+});
+
+
+
 function addIngredientLine(value = "") {
 
     const row = document.createElement("div");
@@ -219,6 +229,7 @@ function addIngredientLine(value = "") {
     ingredientsList.appendChild(row);
 
     const input = $(".ingredient-input", row);
+    input.addEventListener("paste", handleIngredientPaste);
     input.focus();
 
 }
@@ -249,11 +260,25 @@ function addStepLine(value = "") {
 
     stepsList.appendChild(row);
 
-    const textarea = $(".step-input", row);
-    textarea.focus();
+   const textarea = $(".step-input", row);
+   textarea.addEventListener("paste", handleStepPaste);
+   textarea.focus();
     }
 
+    function handleIngredientPaste(event) {
 
+      event.preventDefault();
+
+      const text = event.clipboardData.getData("text");
+      const currentRow = event.target.closest(".ingredient-row");
+      const lines = text
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line !== "");
+
+    lines.forEach(line => addIngredientLine(line));
+    currentRow.remove();
+    }
     addIngredient.addEventListener("click", () => {
         addIngredientLine();
         
@@ -265,7 +290,23 @@ function addStepLine(value = "") {
         
     });
 
+function handleStepPaste(event) {
 
+    event.preventDefault();
+
+    const text = event.clipboardData.getData("text");
+
+    const currentRow = event.target.closest(".step-row");
+
+    const lines = text
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line !== "");
+
+    lines.forEach(line => addStepLine(line));
+
+    currentRow.remove();
+}
 
 
 
@@ -423,7 +464,11 @@ function updateTodayDate() {
 
 function renderSlot(day, slot) {
   const key = `${day}-${slot}`;
-  const recipe = state.recipes.find(r => r.id === state.meals[key]);
+  console.log(state.meals[key]);
+  console.log(typeof state.meals[key]);
+  const recipe = state.recipes.find(
+  r => String(r.id) === String(state.meals[key])
+);
   return `<div class="meal-slot ${slot}" data-drop-meal="${key}">
   <div class="slot-label">
     ${slotNames[slot]}
@@ -496,13 +541,32 @@ function clearDragStyles() {
 }
 
 function renderRecipes(filter = "all", query = "") {
+ 
   const recipes = state.recipes.filter(r =>
+ 
     r.name.toLowerCase().includes(query.toLowerCase()) &&
     (filter === "all" || (filter === "veggie" && r.veggie) || (filter === "quick" && r.time <= 30))
   );
+    recipes.sort((a, b) => {
+      if (a.favorite === b.favorite) return 0;
+      return a.favorite ? -1 : 1;
+  });
+
   $("#recipeGrid").innerHTML = recipes.length ? recipes.map(r => `
     <article class="recipe-card">
-      <div class="recipe-visual ${r.color === "sage" ? "" : r.color}">${r.emoji}</div>
+
+    <div class="recipe-visual ${r.color === "sage" ? "" : r.color}">
+
+        <button
+            class="favorite-button ${r.favorite ? "favorite" : ""}"
+            data-favorite="${r.id}"
+            title="${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}">
+            ${r.favorite ? "★" : "☆"}
+        </button>
+
+        ${r.emoji}
+
+    </div>
       <div class="recipe-content">
         <h3>${r.name}</h3>
         <p class="recipe-meta">◷ ${r.time} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
@@ -573,7 +637,32 @@ function openModal(type, payload = {}) {
   } else if (type === "meal") {
     eyebrow.textContent = "PLANIFIER UN REPAS"; title.textContent = "Choisir une recette";
     fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${r.time} min</option>`).join("")}</select></div>`;
-  } else if (type === "shopping") {
+  } 
+  else if (type === "plan") {
+
+    eyebrow.textContent = "PLANIFIER UNE RECETTE";
+    title.textContent = "Choisir un créneau";
+
+    fields.innerHTML = `
+        <div class="field">
+            <label>Recette</label>
+            <p><strong>${payload.recipe.name}</strong></p>
+        </div>
+
+        <div class="field">
+            <label>Créneau</label>
+
+            <select name="slot" required>
+                <option value="">Choisir...</option>
+                <option value="0-lunch">Mercredi midi</option>
+                <option value="0-dinner">Mercredi soir</option>
+                <option value="1-lunch">Jeudi midi</option>
+                <option value="1-dinner">Jeudi soir</option>
+            </select>
+        </div>
+    `;
+}
+  else if (type === "shopping") {
     eyebrow.textContent = "LISTE DE COURSES"; title.textContent = "Ajouter un article";
     fields.innerHTML = `<div class="field"><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
@@ -623,12 +712,30 @@ $("#modalForm").addEventListener("submit", e => {
     state.recipes.push({ id, name: data.name, time: +data.time, portions: +data.portions, veggie: data.veggie === "true", emoji: data.veggie === "true" ? "🥗" : "🍲", color: data.veggie === "true" ? "sage" : "orange", tags: [data.veggie === "true" ? "Végétarien" : "Maison", +data.time <= 30 ? "Express" : "À partager"].filter(Boolean) });
     renderRecipes(); showToast("Recette ajoutée à votre carnet");
   } else if (type === "meal") {
-    state.meals[payload.key] = +data.recipe; renderWeek(); showToast("Repas ajouté à la semaine");
-  } else if (type === "shopping") {
+    state.meals[payload.key] = data.recipe;
+    renderWeek();
+    showToast("Repas ajouté à la semaine");
+    console.log(data.recipe);
+    console.log(+data.recipe);
+  } else if (type === "plan") {
+
+    console.log("slot =", data.slot);
+    console.log("recipe id =", payload.recipe.id);
+    console.log("meal enregistré =", state.meals);
+
+    state.meals[data.slot] = payload.recipe.id;
+    console.log("après =", state.meals);
+    
+    renderWeek();
+    navigate("planning");
+    showToast("Repas ajouté à la semaine");
+  } 
+    else if (type === "shopping") {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
   } else {
     state.fridge.push({ id: Date.now(), name: data.name, qty: data.qty, expiry: data.expiry, soon: false, emoji: "🥬" }); renderFridge(); showToast("Aliment rangé dans le frigo");
   }
+  console.log(state.recipes);
   save(); $("#modal").close();
 });
 
@@ -641,14 +748,21 @@ document.addEventListener("click", e => {
   if (removeMeal) { delete state.meals[removeMeal.dataset.removeMeal]; save(); renderWeek(); showToast("Repas retiré"); }
   const planRecipe = e.target.closest("[data-plan-recipe]");
   if (planRecipe) {
-    const free = [...Array(7).keys()].flatMap(d => ["lunch","dinner"].map(s => `${d}-${s}`)).find(k => !state.meals[k]);
-    if (free) { state.meals[free] = +planRecipe.dataset.planRecipe; save(); renderWeek(); navigate("planning"); showToast("Recette ajoutée au prochain créneau libre"); }
-    else showToast("Votre semaine est déjà complète !");
-  }
+
+    const recipeId = planRecipe.dataset.planRecipe;
+
+    const recipe = state.recipes.find(r => r.id == recipeId);
+
+    openModal("plan", { recipe });
+
+}
   const editRecipe = e.target.closest("[data-edit-recipe]");
 
   if (editRecipe) {
       const id = editRecipe.dataset.editRecipe;
+      console.log("meal =", state.meals[key]);
+      console.log("type meal =", typeof state.meals[key]);
+      console.log(state.recipes.map(r => [r.id, typeof r.id]));
       const recipe = state.recipes.find(r => r.id == id);
       console.log(recipe);
       $("#recipeModalTitle").textContent = "Modifier la recette";
@@ -658,6 +772,29 @@ document.addEventListener("click", e => {
       recipeForm.dataset.recipeId = recipe.id;
       recipeModal.classList.remove("hidden");
   }
+
+  const favoriteRecipe = e.target.closest("[data-favorite]");
+
+if (favoriteRecipe) {
+
+    const id = favoriteRecipe.dataset.favorite;
+
+    const recipe = state.recipes.find(r => r.id == id);
+
+    if (recipe) {
+        recipe.favorite = !recipe.favorite;
+        showToast(
+        recipe.favorite
+            ? `⭐ "${recipe.name}" ajouté aux favoris`
+            : `☆ "${recipe.name}" retiré des favoris`
+    );
+
+        save();
+        renderRecipes();
+    }
+
+    return;
+}
 
   const delRecipe = e.target.closest("[data-delete-recipe]");
 
