@@ -256,3 +256,173 @@ dialog form { position: relative; padding: 30px; }
   color: var(--muted);
 }
 
+/* ---------- Fenêtre modale ---------- */
+
+.hidden {
+    display: none !important;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 30, 30, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 999;
+}
+
+.modal-content{
+
+    position:relative;
+
+    width:900px;
+    max-width:95vw;
+
+    max-height:90vh;
+
+    background:white;
+
+    border-radius:24px;
+
+    padding:32px;
+
+    display:flex;
+    flex-direction:column;
+
+    box-shadow:0 25px 80px rgba(0,0,0,.20);
+}
+
+.modal-body{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    padding-right:12px;
+}
+
+
+.modal-close {
+    position: absolute;
+
+    top: 20px;
+    right: 20px;
+
+    border: none;
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 1.3rem;
+}
+
+.modal-actions{
+
+    flex-shrink:0;
+
+    margin-top:24px;
+
+    padding-top:20px;
+
+    border-top:1px solid #ece7df;
+
+    display:flex;
+    justify-content:flex-end;
+    gap:16px;
+
+    background:white;
+}
+
+.recipe-form{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+
+    margin-top:24px;
+}
+
+.recipe-form label{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+
+    font-weight:600;
+}
+
+.recipe-form input{
+    padding:14px 16px;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    font-size:1rem;
+}
+
+.recipe-form-grid {
+    display:grid;
+    grid-template-columns:120px 1fr 1fr;
+    gap:16px;
+}
+
+.recipe-separator {
+    margin: 24px 0;
+    border: none;
+    border-top: 1px solid #e8e3da;
+}
+
+.recipe-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recipe-section h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #4f5d3d;
+}
+
+#ingredientsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ingredient-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.ingredient-input{
+    flex:1;
+}
+
+.step-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+}
+
+.step-input{
+    flex:1;
+    resize:vertical;
+    min-height:70px;
+}
+
+.modal-subtitle{
+
+    margin:6px 0 20px;
+
+    color:#7b7b7b;
+
+    font-size:.95rem;
+
+    font-style:italic;
+}
+
+

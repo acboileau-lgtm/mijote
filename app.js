@@ -59,6 +59,216 @@ const slotNames = { lunch: "DÉJEUNER", dinner: "DÎNER" };
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const save = () => localStorage.setItem("mijote-state", JSON.stringify(state));
+
+const recipeModal = $("#recipeModal");
+const openRecipeModal = $("#openRecipeModal");
+const closeRecipeModal = $("#closeRecipeModal");
+const cancelRecipe = $("#cancelRecipe");
+
+const ingredientsList = $("#ingredientsList");
+const addIngredient = $("#addIngredient");
+
+const stepsList = $("#stepsList");
+const addStep = $("#addStep");
+
+const recipeForm = $("#recipeForm");
+
+function loadRecipe(recipe) {
+
+    $("#recipeName").value = recipe.name;
+    $("#recipeEmoji").value = recipe.emoji;
+    $("#recipeTime").value = recipe.time;
+    $("#recipePortions").value = recipe.portions;
+
+}
+
+recipeForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const name = $("#recipeName").value.trim();
+    if (!name) {
+    alert("Le nom de la recette est obligatoire.");
+    $("#recipeName").focus();
+    return;
+    }
+
+    const emoji = $("#recipeEmoji").value.trim() || "👨‍🍳";
+    const time = Number($("#recipeTime").value);
+    const portions = Number($("#recipePortions").value);
+    if (time < 1) {
+    alert("Le temps doit être supérieur à 0 minute.");
+    $("#recipeTime").focus();
+    return;
+    }
+
+    if (portions < 1) {
+        alert("Le nombre de portions doit être supérieur à 0.");
+        $("#recipePortions").focus();
+        return;
+    }
+
+
+    const ingredients = [...$$(".ingredient-input")]
+    .map(input => input.value.trim())
+    .filter(value => value !== "");
+
+    const steps = [...$$(".step-input")]
+    .map(input => input.value.trim())
+    .filter(value => value !== "");
+
+    const recipeId = recipeForm.dataset.recipeId;
+
+    const recipe = {
+        id: recipeId || crypto.randomUUID(),
+        name,
+        emoji,
+        time,
+        portions,
+
+        veggie: false,
+        tags: [],
+
+        ingredients,
+        steps
+    };
+
+        
+
+   if (recipeId) {
+
+    const index = state.recipes.findIndex(r => r.id == recipeId);
+
+    if (index !== -1) {
+        state.recipes[index] = recipe;
+    }
+
+} else {
+
+    state.recipes.push(recipe);
+
+}
+
+save();
+renderRecipes();
+
+    $("#recipeName").value = "";
+    $("#recipeEmoji").value = "";
+    $("#recipeTime").value = 30;
+    $("#recipePortions").value = 4;
+
+    recipeModal.classList.add("hidden");
+});
+
+openRecipeModal.addEventListener("click", () => {
+
+    // Remise à zéro du formulaire
+    delete recipeForm.dataset.recipeId;
+    $("#recipeModalTitle").textContent = "Nouvelle recette";
+    $("#recipeModalSubtitle").textContent = "";
+    $("#saveRecipe").textContent = "Enregistrer";
+    $("#recipeName").value = "";
+    $("#recipeEmoji").value = "";
+    $("#recipeTime").value = 30;
+    $("#recipePortions").value = 4;
+
+    // On vide les listes
+    ingredientsList.innerHTML = "";
+    stepsList.innerHTML = "";
+
+    // Une ligne par défaut
+    addIngredientLine();
+    addStepLine();
+    
+    recipeModal.classList.remove("hidden");
+});
+
+closeRecipeModal.addEventListener("click", () => {
+    recipeModal.classList.add("hidden");
+});
+
+cancelRecipe.addEventListener("click", () => {
+    recipeModal.classList.add("hidden");
+});
+
+function addIngredientLine(value = "") {
+
+    const row = document.createElement("div");
+    row.className = "ingredient-row";
+
+    row.innerHTML = `
+        <input
+            type="text"
+            class="ingredient-input"
+            placeholder="Ex : 500 g de farine"
+            value="${value}"
+        >
+
+        <button
+            type="button"
+            class="icon-button remove-ingredient">
+            🗑
+        </button>
+    `;
+
+    const removeButton = $(".remove-ingredient", row);
+
+    removeButton.addEventListener("click", () => {
+        row.remove();
+    });
+
+    ingredientsList.appendChild(row);
+
+    const input = $(".ingredient-input", row);
+    input.focus();
+
+}
+
+function addStepLine(value = "") {
+
+    const row = document.createElement("div");
+    row.className = "step-row";
+
+    row.innerHTML = `
+        <textarea
+            class="step-input"
+            placeholder="Décrivez cette étape..."
+            rows="2">${value}</textarea>
+
+        <button
+            type="button"
+            class="icon-button remove-step">
+            🗑
+        </button>
+    `;
+
+    const removeButton = $(".remove-step", row);
+
+    removeButton.addEventListener("click", () => {
+        row.remove();
+    });
+
+    stepsList.appendChild(row);
+
+    const textarea = $(".step-input", row);
+    textarea.focus();
+    }
+
+
+    addIngredient.addEventListener("click", () => {
+        addIngredientLine();
+        
+    });
+
+    addStep.addEventListener("click", () => {
+        addStepLine();
+
+        
+    });
+
+
+
+
+
 function getWeekDays() {
   const dayNames = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."];
 
@@ -297,7 +507,21 @@ function renderRecipes(filter = "all", query = "") {
         <h3>${r.name}</h3>
         <p class="recipe-meta">◷ ${r.time} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
         <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
-        <div class="recipe-actions"><button data-plan-recipe="${r.id}">Planifier</button><button data-delete-recipe="${r.id}">Supprimer</button></div>
+        <div class="recipe-actions">
+
+          <button data-plan-recipe="${r.id}">
+              Planifier
+          </button>
+
+          <button data-edit-recipe="${r.id}">
+              Modifier
+          </button>
+
+          <button data-delete-recipe="${r.id}">
+              Supprimer
+          </button>
+
+        </div>
       </div>
     </article>`).join("") : `<div class="empty-state">Aucune recette ne correspond à votre recherche.</div>`;
 }
@@ -421,17 +645,39 @@ document.addEventListener("click", e => {
     if (free) { state.meals[free] = +planRecipe.dataset.planRecipe; save(); renderWeek(); navigate("planning"); showToast("Recette ajoutée au prochain créneau libre"); }
     else showToast("Votre semaine est déjà complète !");
   }
+  const editRecipe = e.target.closest("[data-edit-recipe]");
+
+  if (editRecipe) {
+      const id = editRecipe.dataset.editRecipe;
+      const recipe = state.recipes.find(r => r.id == id);
+      console.log(recipe);
+      $("#recipeModalTitle").textContent = "Modifier la recette";
+      $("#recipeModalSubtitle").textContent = recipe.name;
+      $("#saveRecipe").textContent = "Mettre à jour";
+      loadRecipe(recipe);
+      recipeForm.dataset.recipeId = recipe.id;
+      recipeModal.classList.remove("hidden");
+  }
+
   const delRecipe = e.target.closest("[data-delete-recipe]");
-  if (delRecipe && confirm("Supprimer cette recette du carnet ?")) {
-    const id = +delRecipe.dataset.deleteRecipe;
-    state.recipes = state.recipes.filter(r => r.id !== id);
-    Object.keys(state.meals).forEach(k => { if (state.meals[k] === id) delete state.meals[k]; });
-    save(); renderRecipes(); renderWeek(); showToast("Recette supprimée");
-  }
-  const openRecipe = e.target.closest("[data-open-recipe]");
-  if (openRecipe && !openRecipe.classList.contains("dragging")) {
-    openModal("recipe-details", { recipeId: +openRecipe.dataset.openRecipe });
-  }
+
+if (delRecipe && confirm("Supprimer cette recette du carnet ?")) {
+
+    const id = delRecipe.dataset.deleteRecipe;
+
+    state.recipes = state.recipes.filter(r => r.id != id);
+
+    Object.keys(state.meals).forEach(key => {
+        if (state.meals[key] == id) {
+            delete state.meals[key];
+        }
+    });
+
+    save();
+    renderRecipes();
+    renderWeek();
+    showToast("Recette supprimée");
+}
 });
 
 document.addEventListener("change", e => {
@@ -544,7 +790,7 @@ document.addEventListener("pointercancel", () => {
   clearDragStyles();
 });
 
-$("#openRecipeModal").addEventListener("click", () => openModal("recipe"));
+//$("#openRecipeModal").addEventListener("click", () => openModal("recipe"));
 $("#addShopping").addEventListener("click", () => openModal("shopping"));
 $("#addFridge").addEventListener("click", () => openModal("fridge"));
 $("#uncheckAll").addEventListener("click", () => { state.shopping.forEach(i => i.checked = false); save(); renderShopping(); });
@@ -581,3 +827,4 @@ renderWeek();
 renderRecipes();
 renderShopping();
 renderFridge();
+
