@@ -148,6 +148,115 @@
         <div class="fridge-alert"><span>!</span><div><strong>À consommer bientôt</strong><p>Trois aliments arrivent à leur date limite. Une omelette aux légumes ferait parfaitement l’affaire.</p></div><button data-view-link="recipes">Voir les idées →</button></div>
         <div class="fridge-grid" id="fridgeGrid"></div>
       </section>
+        <div id="recipeModal" class="modal hidden">
+
+          <div class="modal-content">
+
+            <button id="closeRecipeModal" class="modal-close">
+              ✕
+            </button>
+
+            <h2 id="recipeModalTitle">Nouvelle recette</h2>
+
+            <p id="recipeModalSubtitle" class="modal-subtitle"></p>
+
+            <div class="modal-body">
+
+            <form id="recipeForm" class="recipe-form">
+
+              <label>
+                Nom de la recette
+                <input
+                  type="text"
+                  id="recipeName"
+                  placeholder="Ex : Lasagnes aux légumes">
+              </label>
+
+              <div class="recipe-form-grid">
+
+                <label>
+                  Emoji
+                  <input
+                    type="text"
+                    id="recipeEmoji"
+                    placeholder="🍝">
+                </label>
+
+                <label>
+                  Temps (min)
+                  <input
+                    type="number"
+                    id="recipeTime"
+                    placeholder="30">
+                </label>
+
+                <label>
+                  Portions
+                  <input
+                    type="number"
+                    id="recipePortions"
+                    placeholder="4">
+                </label>
+
+              </div>
+
+              <hr class="recipe-separator">
+
+              <section class="recipe-section">
+
+                <h3>🧺 Ingrédients</h3>
+
+                <div id="ingredientsList"></div>
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  id="addIngredient">
+                  + Ajouter un ingrédient
+                </button>
+
+                <hr class="recipe-separator">
+
+                <h3>👨‍🍳 Préparation</h3>
+
+                <div id="stepsList"></div>
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  id="addStep">
+                  + Ajouter une étape
+                </button>
+
+
+              </section>
+
+            </form>
+
+            </div>
+
+            <div class="modal-actions">
+
+              <button
+                type="button"
+                class="secondary-button"
+                id="cancelRecipe">
+                Annuler
+              </button>
+
+              <button
+                type="submit"
+                form="recipeForm"
+                class="primary-button"
+                id="saveRecipe">
+                Enregistrer
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
     </main>
   </div>
 
