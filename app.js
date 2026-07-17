@@ -74,138 +74,232 @@ const addStep = $("#addStep");
 
 const recipeForm = $("#recipeForm");
 
+const CATEGORIES = [
+  "Apéritif",
+  "Entrée",
+  "Plat",
+  "Accompagnement",
+  "Dessert",
+  "Petit-déjeuner",
+  "Boisson",
+  "Sauce"
+];
+
+const EQUIPMENT = [
+  "Four",
+  "Air Fryer",
+  "Monsieur Cuisine",
+  "Barbecue",
+  "Plancha",
+  "Cocotte",
+  "Cookeo",
+  "Micro-ondes",
+  "Sans cuisson"
+];
+
+const OCCASIONS = [
+  "Quotidien",
+  "Invités",
+  "Barbecue",
+  "Noël",
+  "Nouvel An",
+  "Camping",
+  "Brunch",
+  "Pique-nique",
+  "Vacances"
+];
+
+function createRecipe(data = {}) {
+  return {
+    // Identification
+    id: data.id ?? crypto.randomUUID(),
+    name: data.name ?? "",
+
+    // Photo
+    photo: data.photo ?? "",
+
+    // Classement
+    category: data.category ?? "Plat",
+    tags: data.tags ?? [],
+
+    // Apparence
+    emoji: data.emoji ?? "🍽️",
+    color: data.color ?? "orange",
+
+    // Temps
+    prepTime: data.prepTime ?? 0,
+    cookTime: data.cookTime ?? 0,
+    restTime: data.restTime ?? 0,
+
+    // Portions
+    portions: data.portions ?? 4,
+
+    // Régimes
+    veggie: data.veggie ?? false,
+    vegan: data.vegan ?? false,
+    glutenFree: data.glutenFree ?? false,
+    lactoseFree: data.lactoseFree ?? false,
+
+    // Préférences
+    favorite: data.favorite ?? false,
+    archived: data.archived ?? false,
+
+    // Informations
+    difficulty: data.difficulty ?? 1,
+    price: data.price ?? 1,
+
+    // Organisation
+    equipment: data.equipment ?? [],
+    occasion: data.occasion ?? [],
+
+    // Contenu
+    ingredients: data.ingredients ?? [],
+    steps: data.steps ?? [],
+    notes: data.notes ?? "",
+
+    // Historique
+    lastCooked: data.lastCooked ?? null,
+    cookCount: data.cookCount ?? 0,
+    rating: data.rating ?? 0,
+
+    // Source
+    source: data.source ?? {
+      type: "",
+      value: ""
+    }
+  };
+}
+
 function loadRecipe(recipe) {
 
-    $("#recipeName").value = recipe.name;
-    $("#recipeEmoji").value = recipe.emoji;
-    $("#recipeTime").value = recipe.time;
-    $("#recipePortions").value = recipe.portions;
+  $("#recipeName").value = recipe.name;
+  $("#recipeEmoji").value = recipe.emoji;
+  $("#recipeTime").value = recipe.prepTime;
+  $("#recipePortions").value = recipe.portions;
 
 }
 
 recipeForm.addEventListener("submit", (event) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    const name = $("#recipeName").value.trim();
-    if (!name) {
+  const name = $("#recipeName").value.trim();
+  if (!name) {
     alert("Le nom de la recette est obligatoire.");
     $("#recipeName").focus();
     return;
-    }
+  }
 
-    const emoji = $("#recipeEmoji").value.trim() || "👨‍🍳";
-    const time = Number($("#recipeTime").value);
-    const portions = Number($("#recipePortions").value);
-    if (time < 1) {
+  const emoji = $("#recipeEmoji").value.trim() || "👨‍🍳";
+  const time = Number($("#recipeTime").value);
+  const portions = Number($("#recipePortions").value);
+  if (time < 1) {
     alert("Le temps doit être supérieur à 0 minute.");
     $("#recipeTime").focus();
     return;
-    }
+  }
 
-    if (portions < 1) {
-        alert("Le nombre de portions doit être supérieur à 0.");
-        $("#recipePortions").focus();
-        return;
-    }
+  if (portions < 1) {
+    alert("Le nombre de portions doit être supérieur à 0.");
+    $("#recipePortions").focus();
+    return;
+  }
 
 
-    const ingredients = [...$$(".ingredient-input")]
+  const ingredients = [...$$(".ingredient-input")]
     .map(input => input.value.trim())
     .filter(value => value !== "");
 
-    const steps = [...$$(".step-input")]
+  const steps = [...$$(".step-input")]
     .map(input => input.value.trim())
     .filter(value => value !== "");
 
-    const recipeId = recipeForm.dataset.recipeId;
+  const recipeId = recipeForm.dataset.recipeId;
+ 
+  const recipe = createRecipe({
+    id: recipeId || undefined,
 
-    const recipe = {
-      id: crypto.randomUUID(),
-      name,
-      emoji,
-      time,
-      portions,
+    name,
+    emoji,
 
-      favorite: false,
+    prepTime: time,
 
-      veggie: false,
-      tags: [],
+    portions,
 
-      ingredients,
-      steps
-    };
+    ingredients,
+    steps
+});
 
-        
 
-   if (recipeId) {
+
+  if (recipeId) {
 
     const index = state.recipes.findIndex(r => r.id == recipeId);
 
     if (index !== -1) {
-        state.recipes[index] = recipe;
+      state.recipes[index] = recipe;
     }
 
-} else {
+  } else {
 
     state.recipes.push(recipe);
 
-}
+  }
 
 
-save();
-renderRecipes();
+  save();
+  renderRecipes();
 
-    $("#recipeName").value = "";
-    $("#recipeEmoji").value = "";
-    $("#recipeTime").value = 30;
-    $("#recipePortions").value = 4;
+  $("#recipeName").value = "";
+  $("#recipeEmoji").value = "";
+  $("#recipeTime").value = 30;
+  $("#recipePortions").value = 4;
 
-    recipeModal.classList.add("hidden");
+  recipeModal.classList.add("hidden");
 });
 
 openRecipeModal.addEventListener("click", () => {
 
-    // Remise à zéro du formulaire
-    delete recipeForm.dataset.recipeId;
-    $("#recipeModalTitle").textContent = "Nouvelle recette";
-    $("#recipeModalSubtitle").textContent = "";
-    $("#saveRecipe").textContent = "Enregistrer";
-    $("#recipeName").value = "";
-    $("#recipeEmoji").value = "";
-    $("#recipeTime").value = 30;
-    $("#recipePortions").value = 4;
+  // Remise à zéro du formulaire
+  delete recipeForm.dataset.recipeId;
+  $("#recipeModalTitle").textContent = "Nouvelle recette";
+  $("#recipeModalSubtitle").textContent = "";
+  $("#saveRecipe").textContent = "Enregistrer";
+  $("#recipeName").value = "";
+  $("#recipeEmoji").value = "";
+  $("#recipeTime").value = 30;
+  $("#recipePortions").value = 4;
 
-    // On vide les listes
-    ingredientsList.innerHTML = "";
-    stepsList.innerHTML = "";
+  // On vide les listes
+  ingredientsList.innerHTML = "";
+  stepsList.innerHTML = "";
 
-    // Une ligne par défaut
-    addIngredientLine();
-    addStepLine();
-    
-    recipeModal.classList.remove("hidden");
+  // Une ligne par défaut
+  addIngredientLine();
+  addStepLine();
+
+  recipeModal.classList.remove("hidden");
 });
 
 closeRecipeModal.addEventListener("click", () => {
-    recipeModal.classList.add("hidden");
+  recipeModal.classList.add("hidden");
 });
 
 cancelRecipe.addEventListener("click", () => {
-    recipeModal.classList.add("hidden");
+  recipeModal.classList.add("hidden");
 });
 
 recipeSearch.addEventListener("input", () => {
-    console.log(recipeSearch.value);
+  console.log(recipeSearch.value);
 });
 
 
 
 function addIngredientLine(value = "") {
 
-    const row = document.createElement("div");
-    row.className = "ingredient-row";
+  const row = document.createElement("div");
+  row.className = "ingredient-row";
 
-    row.innerHTML = `
+  row.innerHTML = `
         <input
             type="text"
             class="ingredient-input"
@@ -220,26 +314,26 @@ function addIngredientLine(value = "") {
         </button>
     `;
 
-    const removeButton = $(".remove-ingredient", row);
+  const removeButton = $(".remove-ingredient", row);
 
-    removeButton.addEventListener("click", () => {
-        row.remove();
-    });
+  removeButton.addEventListener("click", () => {
+    row.remove();
+  });
 
-    ingredientsList.appendChild(row);
+  ingredientsList.appendChild(row);
 
-    const input = $(".ingredient-input", row);
-    input.addEventListener("paste", handleIngredientPaste);
-    input.focus();
+  const input = $(".ingredient-input", row);
+  input.addEventListener("paste", handleIngredientPaste);
+  input.focus();
 
 }
 
 function addStepLine(value = "") {
 
-    const row = document.createElement("div");
-    row.className = "step-row";
+  const row = document.createElement("div");
+  row.className = "step-row";
 
-    row.innerHTML = `
+  row.innerHTML = `
         <textarea
             class="step-input"
             placeholder="Décrivez cette étape..."
@@ -252,60 +346,60 @@ function addStepLine(value = "") {
         </button>
     `;
 
-    const removeButton = $(".remove-step", row);
+  const removeButton = $(".remove-step", row);
 
-    removeButton.addEventListener("click", () => {
-        row.remove();
-    });
+  removeButton.addEventListener("click", () => {
+    row.remove();
+  });
 
-    stepsList.appendChild(row);
+  stepsList.appendChild(row);
 
-   const textarea = $(".step-input", row);
-   textarea.addEventListener("paste", handleStepPaste);
-   textarea.focus();
-    }
+  const textarea = $(".step-input", row);
+  textarea.addEventListener("paste", handleStepPaste);
+  textarea.focus();
+}
 
-    function handleIngredientPaste(event) {
+function handleIngredientPaste(event) {
 
-      event.preventDefault();
+  event.preventDefault();
 
-      const text = event.clipboardData.getData("text");
-      const currentRow = event.target.closest(".ingredient-row");
-      const lines = text
+  const text = event.clipboardData.getData("text");
+  const currentRow = event.target.closest(".ingredient-row");
+  const lines = text
     .split("\n")
     .map(line => line.trim())
     .filter(line => line !== "");
 
-    lines.forEach(line => addIngredientLine(line));
-    currentRow.remove();
-    }
-    addIngredient.addEventListener("click", () => {
-        addIngredientLine();
-        
-    });
+  lines.forEach(line => addIngredientLine(line));
+  currentRow.remove();
+}
+addIngredient.addEventListener("click", () => {
+  addIngredientLine();
 
-    addStep.addEventListener("click", () => {
-        addStepLine();
+});
 
-        
-    });
+addStep.addEventListener("click", () => {
+  addStepLine();
+
+
+});
 
 function handleStepPaste(event) {
 
-    event.preventDefault();
+  event.preventDefault();
 
-    const text = event.clipboardData.getData("text");
+  const text = event.clipboardData.getData("text");
 
-    const currentRow = event.target.closest(".step-row");
+  const currentRow = event.target.closest(".step-row");
 
-    const lines = text
-        .split("\n")
-        .map(line => line.trim())
-        .filter(line => line !== "");
+  const lines = text
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line !== "");
 
-    lines.forEach(line => addStepLine(line));
+  lines.forEach(line => addStepLine(line));
 
-    currentRow.remove();
+  currentRow.remove();
 }
 
 
@@ -328,9 +422,9 @@ function getWeekDays() {
     d.setDate(start.getDate() + i);
 
     days.push({
-    name: dayNames[d.getDay()],
-    day: d.getDate(),
-    date: new Date(d)
+      name: dayNames[d.getDay()],
+      day: d.getDate(),
+      date: new Date(d)
     });
   }
 
@@ -355,15 +449,14 @@ function renderWeek() {
   updateWeekTitle();
   updateTodayDate();
 
- const days = getWeekDays();
- const today = new Date();
+  const days = getWeekDays();
+  const today = new Date();
 
-$("#weekGrid").innerHTML = days.map((dayInfo, day) => `
-    <article class="day-column ${
-    dayInfo.date.toDateString() === today.toDateString()
+  $("#weekGrid").innerHTML = days.map((dayInfo, day) => `
+    <article class="day-column ${dayInfo.date.toDateString() === today.toDateString()
       ? "today"
       : ""
-  }">
+    }">
       <header class="day-header">
       <strong>${dayInfo.name}</strong>
       <span>${dayInfo.day}</span>
@@ -407,57 +500,55 @@ function updateTodayDate() {
   $("#todayDate").textContent =
     `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
 
-    const firstDay = new Date(currentDate);
-    const diff = (firstDay.getDay() - 3 + 7) % 7;
-    firstDay.setDate(firstDay.getDate() - diff);
+  const firstDay = new Date(currentDate);
+  const diff = (firstDay.getDay() - 3 + 7) % 7;
+  firstDay.setDate(firstDay.getDate() - diff);
 
-    const todayIndex = Math.floor(
+  const todayIndex = Math.floor(
     (today - firstDay) / (1000 * 60 * 60 * 24)
-    );
+  );
 
-    if (todayIndex < 0 || todayIndex > 6) {
+  if (todayIndex < 0 || todayIndex > 6) {
     $("#todayMeals").innerHTML = "";
     return;
-    }
+  }
 
-    const lunchKey = `${todayIndex}-lunch`;
-    const dinnerKey = `${todayIndex}-dinner`;
+  const lunchKey = `${todayIndex}-lunch`;
+  const dinnerKey = `${todayIndex}-dinner`;
 
-    const lunchRecipe = state.recipes.find(
+  const lunchRecipe = state.recipes.find(
     r => r.id === state.meals[lunchKey]
-    );
+  );
 
-    const dinnerRecipe = state.recipes.find(
+  const dinnerRecipe = state.recipes.find(
     r => r.id === state.meals[dinnerKey]
-    );
+  );
 
-    $("#todayMeals").innerHTML = `
+  $("#todayMeals").innerHTML = `
     <div class="today-meal">
       <h3>🌞 Déjeuner</h3>
-      ${
-        lunchRecipe
-          ? `
+      ${lunchRecipe
+      ? `
             <div class="meal-card ${lunchRecipe.color}">
               <strong>${lunchRecipe.name}</strong>
-              <small>${lunchRecipe.emoji} ${lunchRecipe.time} min · ${lunchRecipe.portions} pers.</small>
+              <small>${lunchRecipe.emoji} ${lunchRecipe.prepTime} min · ${lunchRecipe.portions} pers.</small>
             </div>
           `
-          : "<p>Aucun repas prévu</p>"
-      }
+      : "<p>Aucun repas prévu</p>"
+    }
     </div>
 
     <div class="today-meal">
       <h3>🌙 Dîner</h3>
-      ${
-        dinnerRecipe
-          ? `
+      ${dinnerRecipe
+      ? `
             <div class="meal-card ${dinnerRecipe.color}">
               <strong>${dinnerRecipe.name}</strong>
-              <small>${dinnerRecipe.emoji} ${dinnerRecipe.time} min · ${dinnerRecipe.portions} pers.</small>
+              <small>${dinnerRecipe.emoji} ${dinnerRecipe.prepTime} min · ${dinnerRecipe.portions} pers.</small>
             </div>
           `
-          : "<p>Aucun repas prévu</p>"
-      }
+      : "<p>Aucun repas prévu</p>"
+    }
     </div>
   `;
 }
@@ -467,16 +558,15 @@ function renderSlot(day, slot) {
   console.log(state.meals[key]);
   console.log(typeof state.meals[key]);
   const recipe = state.recipes.find(
-  r => String(r.id) === String(state.meals[key])
-);
+    r => String(r.id) === String(state.meals[key])
+  );
   return `<div class="meal-slot ${slot}" data-drop-meal="${key}">
   <div class="slot-label">
     ${slotNames[slot]}
     <span>${slot === "lunch" ? "☀" : "☾"}</span>
   </div>
 
-  ${
-    recipe
+  ${recipe
       ? `
         <button
           class="remove-meal"
@@ -493,7 +583,7 @@ function renderSlot(day, slot) {
           aria-label="Ajouter un repas"
         >＋</button>
       `
-  }
+    }
 </div>`;
 
 }
@@ -502,7 +592,7 @@ function renderMealCard(recipe, key) {
   if (!recipe) {
     return `<p>Aucun repas prévu</p>`;
   }
- return `
+  return `
   <div
     class="meal-card ${recipe.color == "sage" ? "" : recipe.color}"
     draggable="true"
@@ -512,7 +602,7 @@ function renderMealCard(recipe, key) {
     <strong>${recipe.name}</strong>
     <small>
         ${recipe.emoji}
-        ${recipe.time} min ·
+        ${recipe.prepTime} min ·
         ${recipe.portions} pers.
     </small>
 </div>
@@ -541,15 +631,15 @@ function clearDragStyles() {
 }
 
 function renderRecipes(filter = "all", query = "") {
- 
+
   const recipes = state.recipes.filter(r =>
- 
+
     r.name.toLowerCase().includes(query.toLowerCase()) &&
-    (filter === "all" || (filter === "veggie" && r.veggie) || (filter === "quick" && r.time <= 30))
+    (filter === "all" || (filter === "veggie" && r.veggie) || (filter === "quick" && r.prepTime <= 30))
   );
-    recipes.sort((a, b) => {
-      if (a.favorite === b.favorite) return 0;
-      return a.favorite ? -1 : 1;
+  recipes.sort((a, b) => {
+    if (a.favorite === b.favorite) return 0;
+    return a.favorite ? -1 : 1;
   });
 
   $("#recipeGrid").innerHTML = recipes.length ? recipes.map(r => `
@@ -569,7 +659,7 @@ function renderRecipes(filter = "all", query = "") {
     </div>
       <div class="recipe-content">
         <h3>${r.name}</h3>
-        <p class="recipe-meta">◷ ${r.time} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
+        <p class="recipe-meta">◷ ${r.prepTime} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
         <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
         <div class="recipe-actions">
 
@@ -628,6 +718,9 @@ function openModal(type, payload = {}) {
   cancelButton.textContent = "Annuler";
   submitButton.hidden = false;
   submitButton.textContent = "Enregistrer";
+  // TODO FEAT-005
+  // Ancien système de création de recette.
+  // À supprimer lorsque recipeForm sera entièrement migré.
   if (type === "recipe") {
     eyebrow.textContent = "NOUVELLE RECETTE"; title.textContent = "Ajouter une recette";
     fields.innerHTML = `<div class="field"><label>Nom de la recette</label><input name="name" required placeholder="Ex. Gratin de courgettes"></div>
@@ -636,8 +729,8 @@ function openModal(type, payload = {}) {
       <div class="field"><label>Type</label><select name="veggie"><option value="false">Tous les plats</option><option value="true">Végétarien</option></select></div>`;
   } else if (type === "meal") {
     eyebrow.textContent = "PLANIFIER UN REPAS"; title.textContent = "Choisir une recette";
-    fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${r.time} min</option>`).join("")}</select></div>`;
-  } 
+    fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${r.prepTime} min</option>`).join("")}</select></div>`;
+  }
   else if (type === "plan") {
 
     eyebrow.textContent = "PLANIFIER UNE RECETTE";
@@ -655,36 +748,35 @@ function openModal(type, payload = {}) {
             <select name="slot" required>
     <option value="">Choisir...</option>
 
-    ${
-        getWeekDays().flatMap((dayInfo, day) =>
-            ["lunch", "dinner"].map(slot => {
+    ${getWeekDays().flatMap((dayInfo, day) =>
+      ["lunch", "dinner"].map(slot => {
 
-                const key = `${day}-${slot}`;
-                const plannedId = state.meals[key];
+        const key = `${day}-${slot}`;
+        const plannedId = state.meals[key];
 
-                const plannedRecipe = state.recipes.find(r => r.id == plannedId);
+        const plannedRecipe = state.recipes.find(r => r.id == plannedId);
 
-                const label =
-                    `${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"}` +
-                    (plannedRecipe
-                        ? ` 🔄 ${plannedRecipe.name}`
-                        : " 🟢 Libre");
+        const label =
+          `${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"}` +
+          (plannedRecipe
+            ? ` 🔄 ${plannedRecipe.name}`
+            : " 🟢 Libre");
 
-                return `<option value="${key}">${label}</option>`;
-            })
-        ).join("")
-    }
+        return `<option value="${key}">${label}</option>`;
+      })
+    ).join("")
+      }
 
 </select>
         </div>
     `;
-}
-else if (type === "complete-week") {
+  }
+  else if (type === "complete-week") {
 
-  eyebrow.textContent = "PLANNING INTELLIGENT";
-  title.textContent = "Compléter ma semaine";
+    eyebrow.textContent = "PLANNING INTELLIGENT";
+    title.textContent = "Compléter ma semaine";
 
-  fields.innerHTML = `
+    fields.innerHTML = `
     <div class="field">
       <label>
         <input type="checkbox" name="noDuplicates" checked>
@@ -720,7 +812,7 @@ else if (type === "complete-week") {
       </label>
     </div>
   `;
-}
+  }
   else if (type === "shopping") {
     eyebrow.textContent = "LISTE DE COURSES"; title.textContent = "Ajouter un article";
     fields.innerHTML = `<div class="field"><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
@@ -740,7 +832,7 @@ else if (type === "complete-week") {
     submitButton.hidden = true;
     fields.innerHTML = `
       <div class="recipe-detail-meta">
-        <span>◷ ${recipe.time} min</span>
+        <span>◷ ${recipe.prepTime} min</span>
         <span>♙ ${recipe.portions} personnes</span>
         ${recipe.veggie ? "<span>☘ Végétarien</span>" : ""}
       </div>
@@ -748,26 +840,26 @@ else if (type === "complete-week") {
       <section class="recipe-detail-section">
         <h3>Ingrédients</h3>
         ${recipe.ingredients?.length
-          ? `<ul>${recipe.ingredients.map(item => `<li>${item}</li>`).join("")}</ul>`
-          : `<p>Les ingrédients détaillés pourront être ajoutés lors de la modification de cette recette.</p>`}
+        ? `<ul>${recipe.ingredients.map(item => `<li>${item}</li>`).join("")}</ul>`
+        : `<p>Les ingrédients détaillés pourront être ajoutés lors de la modification de cette recette.</p>`}
       </section>
       <section class="recipe-detail-section">
         <h3>Préparation</h3>
         ${recipe.steps?.length
-          ? `<ol>${recipe.steps.map(step => `<li>${step}</li>`).join("")}</ol>`
-          : `<p>La préparation détaillée n’a pas encore été renseignée.</p>`}
+        ? `<ol>${recipe.steps.map(step => `<li>${step}</li>`).join("")}</ol>`
+        : `<p>La préparation détaillée n’a pas encore été renseignée.</p>`}
       </section>`;
   }
   const slotSelect = fields.querySelector('select[name="slot"]');
 
-if (slotSelect) {
+  if (slotSelect) {
     const firstFree = [...slotSelect.options]
-        .find(o => o.value && !state.meals[o.value]);
+      .find(o => o.value && !state.meals[o.value]);
 
     if (firstFree) {
-        slotSelect.value = firstFree.value;
+      slotSelect.value = firstFree.value;
     }
-}
+  }
 
   modal.showModal();
 }
@@ -777,9 +869,66 @@ $("#modalForm").addEventListener("submit", e => {
   e.preventDefault();
   const form = e.currentTarget, data = Object.fromEntries(new FormData(form));
   const type = form.dataset.type, payload = JSON.parse(form.dataset.payload || "{}");
+  // TODO FEAT-005
+  // Ancien système de création de recette.
+  // À supprimer lorsque recipeForm sera entièrement migré.
   if (type === "recipe") {
     const id = Date.now();
-    state.recipes.push({ id, name: data.name, time: +data.time, portions: +data.portions, veggie: data.veggie === "true", emoji: data.veggie === "true" ? "🥗" : "🍲", color: data.veggie === "true" ? "sage" : "orange", tags: [data.veggie === "true" ? "Végétarien" : "Maison", +data.time <= 30 ? "Express" : "À partager"].filter(Boolean) });
+    console.log(">>> NOUVEAU PUSH");
+    state.recipes.push({
+      // Identification
+      id,
+      name: data.name,
+      photo: "",
+
+      // Classement
+      category: "Plat",
+      tags: [
+        data.veggie === "true" ? "Végétarien" : "Maison",
+        +data.time <= 30 ? "Express" : "À partager"
+      ].filter(Boolean),
+
+      // Apparence
+      emoji: data.veggie === "true" ? "🥗" : "🍝",
+      color: data.veggie === "true" ? "sage" : "orange",
+
+      // Temps
+      prepTime: +data.time,
+      cookTime: 0,
+      restTime: 0,
+
+      // Portions
+      portions: +data.portions,
+
+      // Régimes
+      veggie: data.veggie === "true",
+      vegan: false,
+      glutenFree: false,
+      lactoseFree: false,
+
+      // Préférences
+      favorite: false,
+      archived: false,
+
+      // Difficulté / coût
+      difficulty: 1,
+      price: 1,
+
+      // Organisation
+      equipment: [],
+      occasion: [],
+
+      // Contenu
+      ingredients: [],
+      steps: [],
+      notes: "",
+
+      // Statistiques
+      lastCooked: null,
+      cookCount: 0,
+      rating: 0
+    });
+
     renderRecipes(); showToast("Recette ajoutée à votre carnet");
   } else if (type === "meal") {
     state.meals[payload.key] = data.recipe;
@@ -790,11 +939,11 @@ $("#modalForm").addEventListener("submit", e => {
   } else if (type === "complete-week") {
 
     completeWeek({
-        noDuplicates: data.noDuplicates === "on",
-        quickDinner: data.quickDinner === "on",
-        veggie: data.veggie === "on",
-        favorites: data.favorites === "on",
-        fridge: data.fridge === "on"
+      noDuplicates: data.noDuplicates === "on",
+      quickDinner: data.quickDinner === "on",
+      veggie: data.veggie === "on",
+      favorites: data.favorites === "on",
+      fridge: data.fridge === "on"
     });
 
   } else if (type === "plan") {
@@ -805,28 +954,28 @@ $("#modalForm").addEventListener("submit", e => {
 
     state.meals[data.slot] = payload.recipe.id;
     console.log("après =", state.meals);
-    
-    renderWeek();
-   const slotLabel = {
-    "0-lunch": "Mercredi midi",
-    "0-dinner": "Mercredi soir",
-    "1-lunch": "Jeudi midi",
-    "1-dinner": "Jeudi soir",
-    "2-lunch": "Vendredi midi",
-    "2-dinner": "Vendredi soir",
-    "3-lunch": "Samedi midi",
-    "3-dinner": "Samedi soir",
-    "4-lunch": "Dimanche midi",
-    "4-dinner": "Dimanche soir",
-    "5-lunch": "Lundi midi",
-    "5-dinner": "Lundi soir",
-    "6-lunch": "Mardi midi",
-    "6-dinner": "Mardi soir"
-};
 
-showToast(`✅ ${payload.recipe.name} planifiée • ${slotLabel[data.slot]}`);
-  } 
-    else if (type === "shopping") {
+    renderWeek();
+    const slotLabel = {
+      "0-lunch": "Mercredi midi",
+      "0-dinner": "Mercredi soir",
+      "1-lunch": "Jeudi midi",
+      "1-dinner": "Jeudi soir",
+      "2-lunch": "Vendredi midi",
+      "2-dinner": "Vendredi soir",
+      "3-lunch": "Samedi midi",
+      "3-dinner": "Samedi soir",
+      "4-lunch": "Dimanche midi",
+      "4-dinner": "Dimanche soir",
+      "5-lunch": "Lundi midi",
+      "5-dinner": "Lundi soir",
+      "6-lunch": "Mardi midi",
+      "6-dinner": "Mardi soir"
+    };
+
+    showToast(`✅ ${payload.recipe.name} planifiée • ${slotLabel[data.slot]}`);
+  }
+  else if (type === "shopping") {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
   } else {
     state.fridge.push({ id: Date.now(), name: data.name, qty: data.qty, expiry: data.expiry, soon: false, emoji: "🥬" }); renderFridge(); showToast("Aliment rangé dans le frigo");
@@ -851,66 +1000,65 @@ document.addEventListener("click", e => {
 
     openModal("plan", { recipe });
 
-}
+  }
   const editRecipe = e.target.closest("[data-edit-recipe]");
 
   if (editRecipe) {
-      const id = editRecipe.dataset.editRecipe;
-      console.log("meal =", state.meals[key]);
-      console.log("type meal =", typeof state.meals[key]);
-      console.log(state.recipes.map(r => [r.id, typeof r.id]));
-      const recipe = state.recipes.find(r => r.id == id);
-      console.log(recipe);
-      $("#recipeModalTitle").textContent = "Modifier la recette";
-      $("#recipeModalSubtitle").textContent = recipe.name;
-      $("#saveRecipe").textContent = "Mettre à jour";
-      loadRecipe(recipe);
-      recipeForm.dataset.recipeId = recipe.id;
-      recipeModal.classList.remove("hidden");
+    const id = editRecipe.dataset.editRecipe;
+    const recipe = state.recipes.find(r => r.id == id);
+    console.log("ID recherché :", id);
+    console.log("Recette trouvée :", recipe);
+    console.log(recipe);
+    $("#recipeModalTitle").textContent = "Modifier la recette";
+    $("#recipeModalSubtitle").textContent = recipe.name;
+    $("#saveRecipe").textContent = "Mettre à jour";
+    loadRecipe(recipe);
+    recipeForm.dataset.recipeId = recipe.id;
+    recipeModal.classList.remove("hidden");
   }
 
   const favoriteRecipe = e.target.closest("[data-favorite]");
 
-if (favoriteRecipe) {
+  if (favoriteRecipe) {
 
     const id = favoriteRecipe.dataset.favorite;
 
     const recipe = state.recipes.find(r => r.id == id);
 
     if (recipe) {
-        recipe.favorite = !recipe.favorite;
-        showToast(
+      recipe.favorite = !recipe.favorite;
+      showToast(
         recipe.favorite
-            ? `⭐ "${recipe.name}" ajouté aux favoris`
-            : `☆ "${recipe.name}" retiré des favoris`
-    );
+          ? `⭐ "${recipe.name}" ajouté aux favoris`
+          : `☆ "${recipe.name}" retiré des favoris`
+      );
 
-        save();
-        renderRecipes();
+      save();
+      renderRecipes();
     }
 
     return;
-}
+  }
 
   const delRecipe = e.target.closest("[data-delete-recipe]");
 
-if (delRecipe && confirm("Supprimer cette recette du carnet ?")) {
+  if (delRecipe && confirm("Supprimer cette recette du carnet ?")) {
 
     const id = delRecipe.dataset.deleteRecipe;
 
     state.recipes = state.recipes.filter(r => r.id != id);
 
     Object.keys(state.meals).forEach(key => {
-        if (state.meals[key] == id) {
-            delete state.meals[key];
-        }
+      if (state.meals[key] == id) {
+        delete state.meals[key];
+      }
     });
 
     save();
     renderRecipes();
     renderWeek();
     showToast("Recette supprimée");
-}
+  }
 });
 
 document.addEventListener("change", e => {
@@ -1030,13 +1178,13 @@ $("#uncheckAll").addEventListener("click", () => { state.shopping.forEach(i => i
 $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); renderWeek(); showToast("La semaine est prête à être recomposée"); });
 
 function completeWeek(options) {
-let candidates = [...state.recipes];
-let missingVeggie = 0;
-if (options.veggie) {
+  let candidates = [...state.recipes];
+  let missingVeggie = 0;
+  if (options.veggie) {
 
     const veggieCount = Object.values(state.meals)
-        .map(id => state.recipes.find(r => r.id === id))
-        .filter(r => r?.veggie).length;
+      .map(id => state.recipes.find(r => r.id === id))
+      .filter(r => r?.veggie).length;
 
     console.log("Repas végétariens :", veggieCount);
 
@@ -1044,76 +1192,76 @@ if (options.veggie) {
 
     console.log("Végétariens à ajouter :", missingVeggie);
 
-}
+  }
 
-if (options.noDuplicates) {
+  if (options.noDuplicates) {
     const used = Object.values(state.meals);
     candidates = candidates.filter(r => !used.includes(r.id));
-}
+  }
 
-if (candidates.length === 0) {
+  if (candidates.length === 0) {
     showToast("Aucune recette disponible avec ces critères");
     return;
-}
+  }
 
-const keys = [...Array(7).keys()]
+  const keys = [...Array(7).keys()]
     .flatMap(d => ["lunch", "dinner"].map(s => `${d}-${s}`));
 
-let added = 0;
+  let added = 0;
 
-keys
+  keys
     .filter(k => !state.meals[k])
     .slice(0, 5)
     .forEach((k, i) => {
 
-    let list = candidates;
+      let list = candidates;
 
-    if (options.quickDinner && k.endsWith("dinner")) {
+      if (options.quickDinner && k.endsWith("dinner")) {
 
-        const quick = candidates.filter(r => r.time <= 30);
+        const quick = candidates.filter(r => r.prepTime <= 30);
 
         if (quick.length) {
-            list = quick;
+          list = quick;
         }
 
-    }
+      }
 
-    let recipe;
+      let recipe;
 
-if (missingVeggie > 0) {
+      if (missingVeggie > 0) {
 
-    recipe = list.find(r => r.veggie);
+        recipe = list.find(r => r.veggie);
 
-    if (recipe) {
-        missingVeggie--;
-    }
+        if (recipe) {
+          missingVeggie--;
+        }
 
-} else {
+      } else {
 
-    recipe = list[0];
+        recipe = list[0];
 
-}
+      }
 
-if (!recipe) return;
+      if (!recipe) return;
 
-state.meals[k] = recipe.id;
+      state.meals[k] = recipe.id;
 
-// On retire la recette des listes
-candidates = candidates.filter(r => r.id !== recipe.id);
-list = list.filter(r => r.id !== recipe.id);
+      // On retire la recette des listes
+      candidates = candidates.filter(r => r.id !== recipe.id);
+      list = list.filter(r => r.id !== recipe.id);
 
-added++;
+      added++;
 
-});
+    });
 
-save();
-renderWeek();
+  save();
+  renderWeek();
 
-showToast(`${added} repas ajoutés à votre semaine`);
+  showToast(`${added} repas ajoutés à votre semaine`);
 }
 
 $("#autoPlan").addEventListener("click", () => {
-    openModal("complete-week");
+  openModal("complete-week");
 });
 
 let activeFilter = "all";

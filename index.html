@@ -1,5 +1,5 @@
-<!doctype html>
-<html lang="fr">
+<!doctype html <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,7 @@
   <title>Mijoté — Menus de la semaine</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <div class="app-shell">
     <aside class="sidebar">
@@ -18,7 +19,8 @@
       <nav class="main-nav" aria-label="Navigation principale">
         <button class="nav-item active" data-view="planning"><span>▦</span> Ma semaine</button>
         <button class="nav-item" data-view="recipes"><span>♨</span> Mes recettes</button>
-        <button class="nav-item" data-view="shopping"><span>✓</span> Liste de courses <b id="shoppingBadge">8</b></button>
+        <button class="nav-item" data-view="shopping"><span>✓</span> Liste de courses <b
+            id="shoppingBadge">8</b></button>
         <button class="nav-item" data-view="fridge"><span>◇</span> Mon frigo</button>
       </nav>
 
@@ -63,21 +65,21 @@
         <section class="today-card" id="todayCard">
           <div class="today-card-header">
 
-           <div class="today-title">
+            <div class="today-title">
 
-           <span class="today-icon">👨‍🍳</span>
+              <span class="today-icon">👨‍🍳</span>
 
-            <div class="today-heading">
-               <h2>Au menu du jour</h2>
+              <div class="today-heading">
+                <h2>Au menu du jour</h2>
                 <p id="todayDate" class="today-date"></p>
-           </div>
+              </div>
 
-    </div>
+            </div>
 
-</div>
+          </div>
 
           <div id="todayMeals">
-           <div class="today-meal lunch">
+            <div class="today-meal lunch">
               <h3>🌞 Déjeuner</h3>
               <div id="todayLunch">
                 <p>Aucun repas prévu</p>
@@ -98,15 +100,22 @@
         <section class="bottom-card">
           <div class="bottom-card-copy">
             <span class="soft-icon">☘</span>
-            <div><strong>Votre semaine en un coup d’œil</strong><p>5 repas planifiés · 2 végétariens · environ 2 h 15 de cuisine</p></div>
+            <div><strong>Votre semaine en un coup d’œil</strong>
+              <p>5 repas planifiés · 2 végétariens · environ 2 h 15 de cuisine</p>
+            </div>
           </div>
-          <div class="legend"><span><i class="dot veggie"></i> Végétarien</span><span><i class="dot quick"></i> Moins de 30 min</span></div>
+          <div class="legend"><span><i class="dot veggie"></i> Végétarien</span><span><i class="dot quick"></i> Moins de
+              30 min</span></div>
         </section>
       </section>
 
       <section class="view" id="recipes">
         <div class="page-heading">
-          <div><p class="eyebrow">VOTRE CARNET</p><h1>Mes recettes</h1><p>Gardez toutes vos bonnes idées au même endroit.</p></div>
+          <div>
+            <p class="eyebrow">VOTRE CARNET</p>
+            <h1>Mes recettes</h1>
+            <p>Gardez toutes vos bonnes idées au même endroit.</p>
+          </div>
           <button class="primary-button" id="openRecipeModal">＋ Ajouter une recette</button>
         </div>
         <div class="filters">
@@ -120,8 +129,13 @@
 
       <section class="view" id="shopping">
         <div class="page-heading">
-          <div><p class="eyebrow">POUR CETTE SEMAINE</p><h1>Liste de courses</h1><p>Les ingrédients de vos menus, rangés par rayon.</p></div>
-          <div class="heading-actions"><button class="secondary-button" id="uncheckAll">Tout décocher</button><button class="primary-button" id="addShopping">＋ Ajouter</button></div>
+          <div>
+            <p class="eyebrow">POUR CETTE SEMAINE</p>
+            <h1>Liste de courses</h1>
+            <p>Les ingrédients de vos menus, rangés par rayon.</p>
+          </div>
+          <div class="heading-actions"><button class="secondary-button" id="uncheckAll">Tout décocher</button><button
+              class="primary-button" id="addShopping">＋ Ajouter</button></div>
         </div>
         <div class="shopping-progress">
           <div><strong id="progressText">0 sur 8 articles</strong><span>Votre panier avance tranquillement</span></div>
@@ -142,60 +156,56 @@
 
       <section class="view" id="fridge">
         <div class="page-heading">
-          <div><p class="eyebrow">VOS RÉSERVES</p><h1>Mon frigo</h1><p>Voyez ce que vous avez et cuisinez avant que ça ne se perde.</p></div>
+          <div>
+            <p class="eyebrow">VOS RÉSERVES</p>
+            <h1>Mon frigo</h1>
+            <p>Voyez ce que vous avez et cuisinez avant que ça ne se perde.</p>
+          </div>
           <button class="primary-button" id="addFridge">＋ Ajouter un aliment</button>
         </div>
-        <div class="fridge-alert"><span>!</span><div><strong>À consommer bientôt</strong><p>Trois aliments arrivent à leur date limite. Une omelette aux légumes ferait parfaitement l’affaire.</p></div><button data-view-link="recipes">Voir les idées →</button></div>
+        <div class="fridge-alert"><span>!</span>
+          <div><strong>À consommer bientôt</strong>
+            <p>Trois aliments arrivent à leur date limite. Une omelette aux légumes ferait parfaitement l’affaire.</p>
+          </div><button data-view-link="recipes">Voir les idées →</button>
+        </div>
         <div class="fridge-grid" id="fridgeGrid"></div>
       </section>
-        <div id="recipeModal" class="modal hidden">
+      <div id="recipeModal" class="modal hidden">
 
-          <div class="modal-content">
+        <div class="modal-content">
 
-            <button id="closeRecipeModal" class="modal-close">
-              ✕
-            </button>
+          <button id="closeRecipeModal" class="modal-close">
+            ✕
+          </button>
 
-            <h2 id="recipeModalTitle">Nouvelle recette</h2>
+          <h2 id="recipeModalTitle">Nouvelle recette</h2>
 
-            <p id="recipeModalSubtitle" class="modal-subtitle"></p>
+          <p id="recipeModalSubtitle" class="modal-subtitle"></p>
 
-            <div class="modal-body">
+          <div class="modal-body">
 
             <form id="recipeForm" class="recipe-form">
 
               <label>
                 Nom de la recette
-                <input
-                  type="text"
-                  id="recipeName"
-                  placeholder="Ex : Lasagnes aux légumes">
+                <input type="text" id="recipeName" placeholder="Ex : Lasagnes aux légumes">
               </label>
 
               <div class="recipe-form-grid">
 
                 <label>
                   Emoji
-                  <input
-                    type="text"
-                    id="recipeEmoji"
-                    placeholder="🍝">
+                  <input type="text" id="recipeEmoji" placeholder="🍝">
                 </label>
 
                 <label>
                   Temps (min)
-                  <input
-                    type="number"
-                    id="recipeTime"
-                    placeholder="30">
+                  <input type="number" id="recipeTime" placeholder="30">
                 </label>
 
                 <label>
                   Portions
-                  <input
-                    type="number"
-                    id="recipePortions"
-                    placeholder="4">
+                  <input type="number" id="recipePortions" placeholder="4">
                 </label>
 
               </div>
@@ -208,10 +218,7 @@
 
                 <div id="ingredientsList"></div>
 
-                <button
-                  type="button"
-                  class="secondary-button"
-                  id="addIngredient">
+                <button type="button" class="secondary-button" id="addIngredient">
                   + Ajouter un ingrédient
                 </button>
 
@@ -221,10 +228,7 @@
 
                 <div id="stepsList"></div>
 
-                <button
-                  type="button"
-                  class="secondary-button"
-                  id="addStep">
+                <button type="button" class="secondary-button" id="addStep">
                   + Ajouter une étape
                 </button>
 
@@ -233,30 +237,23 @@
 
             </form>
 
-            </div>
+          </div>
 
-            <div class="modal-actions">
+          <div class="modal-actions">
 
-              <button
-                type="button"
-                class="secondary-button"
-                id="cancelRecipe">
-                Annuler
-              </button>
+            <button type="button" class="secondary-button" id="cancelRecipe">
+              Annuler
+            </button>
 
-              <button
-                type="submit"
-                form="recipeForm"
-                class="primary-button"
-                id="saveRecipe">
-                Enregistrer
-              </button>
-
-            </div>
+            <button type="submit" form="recipeForm" class="primary-button" id="saveRecipe">
+              Enregistrer
+            </button>
 
           </div>
 
         </div>
+
+      </div>
     </main>
   </div>
 
@@ -273,10 +270,12 @@
       <p class="eyebrow" id="modalEyebrow">NOUVELLE RECETTE</p>
       <h2 id="modalTitle">Ajouter une recette</h2>
       <div id="modalFields"></div>
-      <div class="modal-actions"><button class="secondary-button" value="cancel">Annuler</button><button class="primary-button" value="default" id="modalSubmit">Enregistrer</button></div>
+      <div class="modal-actions"><button class="secondary-button" value="cancel">Annuler</button><button
+          class="primary-button" value="default" id="modalSubmit">Enregistrer</button></div>
     </form>
   </dialog>
   <div id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>
+
 </html>
