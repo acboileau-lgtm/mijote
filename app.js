@@ -653,14 +653,73 @@ function openModal(type, payload = {}) {
             <label>Créneau</label>
 
             <select name="slot" required>
-                <option value="">Choisir...</option>
-                <option value="0-lunch">Mercredi midi</option>
-                <option value="0-dinner">Mercredi soir</option>
-                <option value="1-lunch">Jeudi midi</option>
-                <option value="1-dinner">Jeudi soir</option>
-            </select>
+    <option value="">Choisir...</option>
+
+    ${
+        getWeekDays().flatMap((dayInfo, day) =>
+            ["lunch", "dinner"].map(slot => {
+
+                const key = `${day}-${slot}`;
+                const plannedId = state.meals[key];
+
+                const plannedRecipe = state.recipes.find(r => r.id == plannedId);
+
+                const label =
+                    `${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"}` +
+                    (plannedRecipe
+                        ? ` 🔄 ${plannedRecipe.name}`
+                        : " 🟢 Libre");
+
+                return `<option value="${key}">${label}</option>`;
+            })
+        ).join("")
+    }
+
+</select>
         </div>
     `;
+}
+else if (type === "complete-week") {
+
+  eyebrow.textContent = "PLANNING INTELLIGENT";
+  title.textContent = "Compléter ma semaine";
+
+  fields.innerHTML = `
+    <div class="field">
+      <label>
+        <input type="checkbox" name="noDuplicates" checked>
+        Éviter les doublons
+      </label>
+    </div>
+
+    <div class="field">
+      <label>
+        <input type="checkbox" name="quickDinner" checked>
+        Favoriser les repas rapides le soir
+      </label>
+    </div>
+
+    <div class="field">
+      <label>
+        <input type="checkbox" name="veggie" checked>
+        Prévoir au moins 2 repas végétariens
+      </label>
+    </div>
+
+    <div class="field">
+      <label>
+        <input type="checkbox" name="favorites">
+        Utiliser les recettes favorites
+      </label>
+    </div>
+
+    <div class="field">
+      <label>
+        <input type="checkbox" name="fridge">
+        Prioriser les aliments du frigo
+      </label>
+    </div>
+  `;
 }
   else if (type === "shopping") {
     eyebrow.textContent = "LISTE DE COURSES"; title.textContent = "Ajouter un article";
@@ -699,6 +758,17 @@ function openModal(type, payload = {}) {
           : `<p>La préparation détaillée n’a pas encore été renseignée.</p>`}
       </section>`;
   }
+  const slotSelect = fields.querySelector('select[name="slot"]');
+
+if (slotSelect) {
+    const firstFree = [...slotSelect.options]
+        .find(o => o.value && !state.meals[o.value]);
+
+    if (firstFree) {
+        slotSelect.value = firstFree.value;
+    }
+}
+
   modal.showModal();
 }
 
@@ -717,6 +787,16 @@ $("#modalForm").addEventListener("submit", e => {
     showToast("Repas ajouté à la semaine");
     console.log(data.recipe);
     console.log(+data.recipe);
+  } else if (type === "complete-week") {
+
+    completeWeek({
+        noDuplicates: data.noDuplicates === "on",
+        quickDinner: data.quickDinner === "on",
+        veggie: data.veggie === "on",
+        favorites: data.favorites === "on",
+        fridge: data.fridge === "on"
+    });
+
   } else if (type === "plan") {
 
     console.log("slot =", data.slot);
@@ -727,8 +807,24 @@ $("#modalForm").addEventListener("submit", e => {
     console.log("après =", state.meals);
     
     renderWeek();
-    navigate("planning");
-    showToast("Repas ajouté à la semaine");
+   const slotLabel = {
+    "0-lunch": "Mercredi midi",
+    "0-dinner": "Mercredi soir",
+    "1-lunch": "Jeudi midi",
+    "1-dinner": "Jeudi soir",
+    "2-lunch": "Vendredi midi",
+    "2-dinner": "Vendredi soir",
+    "3-lunch": "Samedi midi",
+    "3-dinner": "Samedi soir",
+    "4-lunch": "Dimanche midi",
+    "4-dinner": "Dimanche soir",
+    "5-lunch": "Lundi midi",
+    "5-dinner": "Lundi soir",
+    "6-lunch": "Mardi midi",
+    "6-dinner": "Mardi soir"
+};
+
+showToast(`✅ ${payload.recipe.name} planifiée • ${slotLabel[data.slot]}`);
   } 
     else if (type === "shopping") {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
@@ -932,11 +1028,92 @@ $("#addShopping").addEventListener("click", () => openModal("shopping"));
 $("#addFridge").addEventListener("click", () => openModal("fridge"));
 $("#uncheckAll").addEventListener("click", () => { state.shopping.forEach(i => i.checked = false); save(); renderShopping(); });
 $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); renderWeek(); showToast("La semaine est prête à être recomposée"); });
+
+function completeWeek(options) {
+let candidates = [...state.recipes];
+let missingVeggie = 0;
+if (options.veggie) {
+
+    const veggieCount = Object.values(state.meals)
+        .map(id => state.recipes.find(r => r.id === id))
+        .filter(r => r?.veggie).length;
+
+    console.log("Repas végétariens :", veggieCount);
+
+    missingVeggie = Math.max(0, 2 - veggieCount);
+
+    console.log("Végétariens à ajouter :", missingVeggie);
+
+}
+
+if (options.noDuplicates) {
+    const used = Object.values(state.meals);
+    candidates = candidates.filter(r => !used.includes(r.id));
+}
+
+if (candidates.length === 0) {
+    showToast("Aucune recette disponible avec ces critères");
+    return;
+}
+
+const keys = [...Array(7).keys()]
+    .flatMap(d => ["lunch", "dinner"].map(s => `${d}-${s}`));
+
+let added = 0;
+
+keys
+    .filter(k => !state.meals[k])
+    .slice(0, 5)
+    .forEach((k, i) => {
+
+    let list = candidates;
+
+    if (options.quickDinner && k.endsWith("dinner")) {
+
+        const quick = candidates.filter(r => r.time <= 30);
+
+        if (quick.length) {
+            list = quick;
+        }
+
+    }
+
+    let recipe;
+
+if (missingVeggie > 0) {
+
+    recipe = list.find(r => r.veggie);
+
+    if (recipe) {
+        missingVeggie--;
+    }
+
+} else {
+
+    recipe = list[0];
+
+}
+
+if (!recipe) return;
+
+state.meals[k] = recipe.id;
+
+// On retire la recette des listes
+candidates = candidates.filter(r => r.id !== recipe.id);
+list = list.filter(r => r.id !== recipe.id);
+
+added++;
+
+});
+
+save();
+renderWeek();
+
+showToast(`${added} repas ajoutés à votre semaine`);
+}
+
 $("#autoPlan").addEventListener("click", () => {
-  const keys = [...Array(7).keys()].flatMap(d => ["lunch","dinner"].map(s => `${d}-${s}`));
-  let added = 0;
-  keys.filter(k => !state.meals[k]).slice(0, 5).forEach((k, i) => { state.meals[k] = state.recipes[i % state.recipes.length].id; added++; });
-  save(); renderWeek(); showToast(`${added} repas ajoutés à votre semaine`);
+    openModal("complete-week");
 });
 
 let activeFilter = "all";
