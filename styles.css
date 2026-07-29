@@ -525,12 +525,21 @@ dialog form { position: relative; padding: 30px; }
     text-align: center;
     cursor: pointer;
 
-    transition: all .25s ease;
+    transition:
+    transform .25s,
+    box-shadow .25s,
+    border-color .25s,
+    background .25s;
 }
 
-.photo-dropzone:hover {
-    border-color: var(--forest);
-    background: var(--cream);
+.photo-dropzone:hover{
+    border-color:var(--forest);
+
+    background:var(--cream);
+
+    transform:translateY(-2px);
+
+    box-shadow:0 12px 24px rgba(47,91,70,.08);
 }
 
 .photo-icon {
@@ -547,6 +556,52 @@ dialog form { position: relative; padding: 30px; }
 .photo-subtext {
     font-size: 14px;
     color: var(--muted);
+}
+
+/* ==========================================
+   Carte Informations
+========================================== */
+
+.recipe-info-grid{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.recipe-info-grid label{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.recipe-info-grid input{
+    width:110px;
+}
+
+#recipeEmoji{
+    text-align:center;
+    font-size:1.5rem;
+}
+
+#recipePortions{
+    text-align:center;
+    font-weight:600;
+}
+
+.recipe-card h3{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    margin:0 0 24px;
+
+    font-size:1.5rem;
+}
+
+.recipe-form input:focus{
+    outline:none;
+    border-color:var(--forest);
+    box-shadow:0 0 0 4px rgba(47,91,70,.12);
 }
 
 

@@ -74,6 +74,15 @@ const addStep = $("#addStep");
 
 const recipeForm = $("#recipeForm");
 
+// Mise à jour automatique du temps total
+["recipePrepTime", "recipeCookTime", "recipeRestTime"].forEach(id => {
+    const input = $("#" + id);
+
+    if (input) {
+        input.addEventListener("input", updateTotalTime);
+    }
+});
+
 const CATEGORIES = [
   "Apéritif",
   "Entrée",
@@ -181,7 +190,21 @@ function loadRecipe(recipe) {
 
   $("#recipePortions").value = recipe.portions;
 
+  updateTotalTime();
 }
+
+function updateTotalTime() {
+
+    const prep = Number($("#recipePrepTime").value) || 0;
+    const cook = Number($("#recipeCookTime").value) || 0;
+    const rest = Number($("#recipeRestTime").value) || 0;
+
+    const total = prep + cook + rest;
+
+    $("#recipeTotalTime").innerHTML =
+        `Temps total : <strong>${total} min</strong>`;                    
+}
+
 
 recipeForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -209,7 +232,7 @@ recipeForm.addEventListener("submit", (event) => {
     return;
   }
 
-
+  
   const ingredients = [...$$(".ingredient-input")]
     .map(input => input.value.trim())
     .filter(value => value !== "");

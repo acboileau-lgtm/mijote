@@ -215,51 +215,50 @@
               <div class="recipe-top-grid">
 
                 <section class="recipe-card">
-                 <h3>📋 Informations</h3>
-                <div class="recipe-form-grid">
 
-                  <label>
-                    Emoji
-                    <input type="text" id="recipeEmoji" placeholder="🍝">
-                  </label>
+                  <h3>📋 Informations</h3>
 
-                 
+                  <div class="recipe-info-grid">
 
-                  <label>
-                    Portions
-                    <input type="number" id="recipePortions" placeholder="4">
-                  </label>
+                      <label>
+                          🍽 Portions
+                          <input type="number"
+                                id="recipePortions"
+                                placeholder="4">
+                      </label>
 
-                </div>
+                      <label>
+                          🍝 Emoji
+                          <input type="text"
+                                id="recipeEmoji"
+                                placeholder="🍝"
+                                maxlength="2">
+                      </label>
+
+                  </div>
+
               </section>
 
                 <section class="recipe-card">
                   <h3>⏱ Temps</h3>
-                  
-                  <div class="recipe-times">
-
+                    <div class="recipe-times">
                     <label>
                         ⏱ Préparation
                         <input type="number" id="recipePrepTime" placeholder="20">
                     </label>
-
                     <label>
                         🔥 Cuisson
                         <input type="number" id="recipeCookTime" placeholder="30">
                     </label>
-
                     <label>
                         💤 Repos
                         <input type="number" id="recipeRestTime" placeholder="0">
                     </label>
-
                 </div>
-
-                <div class="recipe-total-time">
+                <div id="recipeTotalTime" class="recipe-total-time">
                     Temps total : <strong>50 min</strong>
                 </div>
               </section>
-
             </div>
 
               
