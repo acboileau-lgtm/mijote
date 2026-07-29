@@ -191,39 +191,78 @@
                 <input type="text" id="recipeName" placeholder="Ex : Lasagnes aux légumes">
               </label>
 
-              <div class="recipe-form-grid">
+              <section class="recipe-photo">
 
-                <label>
-                  Emoji
-                  <input type="text" id="recipeEmoji" placeholder="🍝">
-                </label>
+                <h3>📷 Photo</h3>
 
-                <h3>⏱ Temps</h3>
-                
-                <div class="recipe-times">
-                  <label>
-                      ⏱ Préparation (min)
-                      <input type="number" id="recipePrepTime" placeholder="20">
-                  </label>
+                <div class="photo-dropzone">
 
-                  <label>
-                      🔥 Cuisson (min)
-                      <input type="number" id="recipeCookTime" placeholder="30">
-                  </label>
+                    <div class="photo-icon">📷</div>
 
-                  <label>
-                      💤 Repos (min)
-                      <input type="number" id="recipeRestTime" placeholder="0">
-                  </label>
+                    <div class="photo-text">
+                        Cliquez pour ajouter une photo
+                    </div>
+
+                    <div class="photo-subtext">
+                        JPG • PNG
+                    </div>
 
                 </div>
 
-                <label>
-                  Portions
-                  <input type="number" id="recipePortions" placeholder="4">
-                </label>
+            </section>
+              
 
-              </div>
+              <div class="recipe-top-grid">
+
+                <section class="recipe-card">
+                 <h3>📋 Informations</h3>
+                <div class="recipe-form-grid">
+
+                  <label>
+                    Emoji
+                    <input type="text" id="recipeEmoji" placeholder="🍝">
+                  </label>
+
+                 
+
+                  <label>
+                    Portions
+                    <input type="number" id="recipePortions" placeholder="4">
+                  </label>
+
+                </div>
+              </section>
+
+                <section class="recipe-card">
+                  <h3>⏱ Temps</h3>
+                  
+                  <div class="recipe-times">
+
+                    <label>
+                        ⏱ Préparation
+                        <input type="number" id="recipePrepTime" placeholder="20">
+                    </label>
+
+                    <label>
+                        🔥 Cuisson
+                        <input type="number" id="recipeCookTime" placeholder="30">
+                    </label>
+
+                    <label>
+                        💤 Repos
+                        <input type="number" id="recipeRestTime" placeholder="0">
+                    </label>
+
+                </div>
+
+                <div class="recipe-total-time">
+                    Temps total : <strong>50 min</strong>
+                </div>
+              </section>
+
+            </div>
+
+              
 
               <hr class="recipe-separator">
 

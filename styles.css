@@ -98,7 +98,8 @@ h2 { font-size: 28px; }
 .filter-chip { border: 1px solid var(--line); border-radius: 22px; background: transparent; padding: 0 15px; font-size: 12px; font-weight: 600; }
 .filter-chip.active { color: white; border-color: var(--forest); background: var(--forest); }
 .recipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.recipe-card { min-width: 0; border-radius: 14px; background: var(--paper); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); }
+
+
 .recipe-visual { height: 125px; display: grid; place-items: center; background: #dce5d7; font-size: 50px; position: relative; }
 .recipe-visual.orange { background: #f0d9bd; }.recipe-visual.rose { background: #efd1ca; }.recipe-visual.yellow { background: #eae1bc; }
 .recipe-content { padding: 17px; }
@@ -354,11 +355,8 @@ dialog form { position: relative; padding: 30px; }
 
 .recipe-form input{
     padding:14px 16px;
-
     border:1px solid #ddd;
-
     border-radius:12px;
-
     font-size:1rem;
 }
 
@@ -384,6 +382,7 @@ dialog form { position: relative; padding: 30px; }
     margin: 0;
     font-size: 1rem;
     color: #4f5d3d;
+    margin-bottom:24px;
 }
 
 #ingredientsList {
@@ -456,12 +455,99 @@ dialog form { position: relative; padding: 30px; }
     text-shadow: 0 0 5px rgba(0,0,0,.25);
 }
 
-.recipe-time-section{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
+
+.recipe-times {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 20px;
 }
 
+.recipe-times label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.recipe-times input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.recipe-total-time {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+
+    text-align: center;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    color: var(--forest);
+}
+
+
+.recipe-card {
+    min-width: 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.recipe-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+    margin: 24px 0;
+    align-items: start;
+}
+
+/* ==========================
+   Zone Photo
+========================== */
+
+.photo-dropzone {
+    border: 2px dashed var(--line);
+    border-radius: 18px;
+    background: var(--paper);
+    min-height: 220px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+    cursor: pointer;
+
+    transition: all .25s ease;
+}
+
+.photo-dropzone:hover {
+    border-color: var(--forest);
+    background: var(--cream);
+}
+
+.photo-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.photo-text {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.photo-subtext {
+    font-size: 14px;
+    color: var(--muted);
+}
 
 
 
