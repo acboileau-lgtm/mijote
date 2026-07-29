@@ -392,10 +392,14 @@ dialog form { position: relative; padding: 30px; }
     gap: 12px;
 }
 
-.ingredient-row{
-    display:flex;
-    align-items:center;
-    gap:12px;
+.ingredient-row {
+    display: flex;
+    gap: 12px;
+}
+
+.ingredient-row input {
+    flex: 1;
+    min-width: 0;
 }
 
 .ingredient-input{
@@ -451,6 +455,13 @@ dialog form { position: relative; padding: 30px; }
     transform: scale(1.15);
     text-shadow: 0 0 5px rgba(0,0,0,.25);
 }
+
+.recipe-time-section{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
 
 
 

@@ -174,7 +174,11 @@ function loadRecipe(recipe) {
 
   $("#recipeName").value = recipe.name;
   $("#recipeEmoji").value = recipe.emoji;
-  $("#recipeTime").value = recipe.prepTime;
+
+  $("#recipePrepTime").value = recipe.prepTime;
+  $("#recipeCookTime").value = recipe.cookTime;
+  $("#recipeRestTime").value = recipe.restTime;
+
   $("#recipePortions").value = recipe.portions;
 
 }
@@ -190,13 +194,14 @@ recipeForm.addEventListener("submit", (event) => {
   }
 
   const emoji = $("#recipeEmoji").value.trim() || "👨‍🍳";
-  const time = Number($("#recipeTime").value);
+  const prepTime = Number($("#recipePrepTime").value);
+  const cookTime = Number($("#recipeCookTime").value);
+  const restTime = Number($("#recipeRestTime").value);
   const portions = Number($("#recipePortions").value);
-  if (time < 1) {
-    alert("Le temps doit être supérieur à 0 minute.");
-    $("#recipeTime").focus();
+  if (prepTime < 0 || cookTime < 0 || restTime < 0) {
+    alert("Les temps ne peuvent pas être négatifs.");
     return;
-  }
+}
 
   if (portions < 1) {
     alert("Le nombre de portions doit être supérieur à 0.");
@@ -221,7 +226,9 @@ recipeForm.addEventListener("submit", (event) => {
     name,
     emoji,
 
-    prepTime: time,
+    prepTime,
+    cookTime,
+    restTime,
 
     portions,
 
@@ -251,7 +258,9 @@ recipeForm.addEventListener("submit", (event) => {
 
   $("#recipeName").value = "";
   $("#recipeEmoji").value = "";
-  $("#recipeTime").value = 30;
+  $("#recipePrepTime").value = 20;
+  $("#recipeCookTime").value = 30;
+  $("#recipeRestTime").value = 0;
   $("#recipePortions").value = 4;
 
   recipeModal.classList.add("hidden");
@@ -266,7 +275,9 @@ openRecipeModal.addEventListener("click", () => {
   $("#saveRecipe").textContent = "Enregistrer";
   $("#recipeName").value = "";
   $("#recipeEmoji").value = "";
-  $("#recipeTime").value = 30;
+  $("#recipePrepTime").value = 20;
+  $("#recipeCookTime").value = 30;
+  $("#recipeRestTime").value = 0;
   $("#recipePortions").value = 4;
 
   // On vide les listes
