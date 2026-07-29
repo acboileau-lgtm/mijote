@@ -1,18 +1,66 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 :root {
+
+  /* ==========================
+     COULEURS
+  ========================== */
+
   --ink: #233128;
   --muted: #738078;
+
   --forest: #2f5b46;
   --forest-dark: #234837;
+
   --cream: #f7f3ea;
   --paper: #fffdf8;
+
   --line: #e3ded2;
+
   --sage: #dbe5d8;
   --orange: #e8a15b;
   --rose: #d98074;
-  --shadow: 0 12px 32px rgba(55, 70, 57, .08);
+
+  /* ==========================
+     ESPACEMENTS
+  ========================== */
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* ==========================
+     ARRONDIS
+  ========================== */
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  /* ==========================
+     OMBRES
+  ========================== */
+
+  --shadow-sm: 0 2px 8px rgba(55,70,57,.06);
+  --shadow-md: 0 8px 20px rgba(55,70,57,.08);
+  --shadow-lg: 0 12px 32px rgba(55,70,57,.12);
+  /* Compatibilité avec le CSS existant */
+  --shadow: var(--shadow-md);
+
+  /* ==========================
+     TRANSITIONS
+  ========================== */
+
+  --transition-fast: .15s ease;
+  --transition-normal: .25s ease;
+  --transition-slow: .4s ease;
+
 }
+
 
 * { box-sizing: border-box; }
 body { margin: 0; color: var(--ink); background: var(--cream); font-family: "DM Sans", sans-serif; }
@@ -48,11 +96,70 @@ h1, h2 { font-family: "Playfair Display", serif; line-height: 1.1; }
 h1 { margin: 0 0 9px; font-size: clamp(30px, 3vw, 42px); letter-spacing: -.02em; }
 h2 { font-size: 28px; }
 .page-heading p:last-child { margin: 0; color: var(--muted); }
-.primary-button, .secondary-button, .today-button, .icon-button { min-height: 42px; border-radius: 9px; padding: 0 16px; font-weight: 700; font-size: 13px; }
-.primary-button { border: 1px solid var(--forest); background: var(--forest); color: white; box-shadow: 0 4px 10px rgba(47,91,70,.18); }
-.primary-button:hover { background: var(--forest-dark); }
-.secondary-button, .today-button, .icon-button { border: 1px solid var(--line); background: var(--paper); }
-.secondary-button:hover, .today-button:hover, .icon-button:hover { border-color: #aab4aa; }
+
+/* ==========================================
+   Boutons
+========================================== */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+
+    padding: 12px 20px;
+
+    border-radius: var(--radius-md);
+    cursor: pointer;
+
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.button:hover {
+    transform: translateY(-1px);
+}
+
+.primary-button, .secondary-button, .today-button, .icon-button { 
+    min-height: 42px; 
+    border-radius: 9px; 
+    padding: 0 16px; 
+    font-weight: 700; 
+    font-size: 13px; 
+}
+.primary-button {
+    border: 1px solid var(--forest);
+    background: var(--forest);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.primary-button:hover {
+    background: var(--forest-dark);
+}
+
+.secondary-button,
+.today-button,
+.icon-button {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+}
+
+.secondary-button:hover,
+.today-button:hover,
+.icon-button:hover {
+    border-color: var(--forest);
+    background: var(--cream);
+}
+
 .week-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
 .icon-button { width: 42px; padding: 0; }
 .today-button { margin-left: 3px; }
@@ -353,11 +460,30 @@ dialog form { position: relative; padding: 30px; }
     font-weight:600;
 }
 
-.recipe-form input{
-    padding:14px 16px;
-    border:1px solid #ddd;
-    border-radius:12px;
-    font-size:1rem;
+.input {
+    width: 100%;
+    padding: 14px 16px;
+
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+
+    background: white;
+
+    font-size: 1rem;
+
+    transition: var(--transition-fast);
+}
+
+.input:focus {
+    outline: none;
+
+    border-color: var(--forest);
+
+    box-shadow: 0 0 0 3px rgba(47,91,70,.12);
+}
+
+.recipe-form input {
+    width: 100%;
 }
 
 .recipe-form-grid {
@@ -490,14 +616,23 @@ dialog form { position: relative; padding: 30px; }
 }
 
 
-.recipe-card {
+.card {
     min-width: 0;
     background: var(--paper);
     border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 24px;
-    box-shadow: var(--shadow);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-md);
 }
+
+.recipe-card {
+    min-width: 0;
+}
+
+.recipe-card.card {
+    height: 100%;
+}
+
 
 .recipe-top-grid {
     display: grid;

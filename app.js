@@ -136,7 +136,7 @@ function createRecipe(data = {}) {
     color: data.color ?? "orange",
 
     // Temps
-    prepTime: data.prepTime ?? 0,
+    prepTime: data.prepTime ?? data.time ?? 0,
     cookTime: data.cookTime ?? 0,
     restTime: data.restTime ?? 0,
 
@@ -177,6 +177,12 @@ function createRecipe(data = {}) {
       value: ""
     }
   };
+}
+
+function getTotalTime(recipe) {
+    return (recipe.prepTime || 0)
+         + (recipe.cookTime || 0)
+         + (recipe.restTime || 0);
 }
 
 function loadRecipe(recipe) {
@@ -565,7 +571,7 @@ function updateTodayDate() {
       ? `
             <div class="meal-card ${lunchRecipe.color}">
               <strong>${lunchRecipe.name}</strong>
-              <small>${lunchRecipe.emoji} ${lunchRecipe.prepTime} min · ${lunchRecipe.portions} pers.</small>
+              <small>${lunchRecipe.emoji} ${getTotalTime(lunchRecipe)} min · ${lunchRecipe.portions} pers.</small>
             </div>
           `
       : "<p>Aucun repas prévu</p>"
@@ -578,7 +584,7 @@ function updateTodayDate() {
       ? `
             <div class="meal-card ${dinnerRecipe.color}">
               <strong>${dinnerRecipe.name}</strong>
-              <small>${dinnerRecipe.emoji} ${dinnerRecipe.prepTime} min · ${dinnerRecipe.portions} pers.</small>
+              <small>${dinnerRecipe.emoji} ${getTotalTime(dinnerRecipe)} min · ${dinnerRecipe.portions} pers.</small>
             </div>
           `
       : "<p>Aucun repas prévu</p>"
@@ -636,7 +642,7 @@ function renderMealCard(recipe, key) {
     <strong>${recipe.name}</strong>
     <small>
         ${recipe.emoji}
-        ${recipe.prepTime} min ·
+        ${getTotalTime(recipe)} min ·
         ${recipe.portions} pers.
     </small>
 </div>
@@ -669,7 +675,7 @@ function renderRecipes(filter = "all", query = "") {
   const recipes = state.recipes.filter(r =>
 
     r.name.toLowerCase().includes(query.toLowerCase()) &&
-    (filter === "all" || (filter === "veggie" && r.veggie) || (filter === "quick" && r.prepTime <= 30))
+    (filter === "all" || (filter === "veggie" && r.veggie) || (filter === "quick" && getTotalTime(r) <= 30))
   );
   recipes.sort((a, b) => {
     if (a.favorite === b.favorite) return 0;
@@ -693,7 +699,7 @@ function renderRecipes(filter = "all", query = "") {
     </div>
       <div class="recipe-content">
         <h3>${r.name}</h3>
-        <p class="recipe-meta">◷ ${r.prepTime} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
+        <p class="recipe-meta">◷ ${getTotalTime(r)} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
         <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
         <div class="recipe-actions">
 
@@ -763,7 +769,7 @@ function openModal(type, payload = {}) {
       <div class="field"><label>Type</label><select name="veggie"><option value="false">Tous les plats</option><option value="true">Végétarien</option></select></div>`;
   } else if (type === "meal") {
     eyebrow.textContent = "PLANIFIER UN REPAS"; title.textContent = "Choisir une recette";
-    fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${r.prepTime} min</option>`).join("")}</select></div>`;
+    fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${getTotalTime(r)} min</option>`).join("")}</select></div>`;
   }
   else if (type === "plan") {
 
@@ -866,7 +872,7 @@ function openModal(type, payload = {}) {
     submitButton.hidden = true;
     fields.innerHTML = `
       <div class="recipe-detail-meta">
-        <span>◷ ${recipe.prepTime} min</span>
+        <span>◷ ${getTotalTime(recipe)} min</span>
         <span>♙ ${recipe.portions} personnes</span>
         ${recipe.veggie ? "<span>☘ Végétarien</span>" : ""}
       </div>
