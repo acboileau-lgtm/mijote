@@ -50,16 +50,16 @@
             <h1>Bonjour, qu’est-ce qu’on mange ?</h1>
             <p>Votre semaine est presque prête. Encore quelques repas à prévoir.</p>
           </div>
-          <button class="primary-button" id="autoPlan">✦ Compléter ma semaine</button>
+          <button class="button primary-button" id="autoPlan">✦ Compléter ma semaine</button>
         </div>
 
         <div class="week-toolbar">
-          <button class="icon-button" id="prevWeek" aria-label="Semaine précédente">←</button>
-          <button class="today-button" id="todayWeek">Cette semaine</button>
-          <button class="icon-button" id="nextWeek" aria-label="Semaine suivante">→</button>
+          <button class="button icon-button" id="prevWeek" aria-label="Semaine précédente">←</button>
+          <button class="button today-button" id="todayWeek">Cette semaine</button>
+          <button class="button icon-button" id="nextWeek" aria-label="Semaine suivante">→</button>
           <span class="toolbar-spacer"></span>
-          <button class="secondary-button" id="clearWeek">Effacer</button>
-          <button class="secondary-button" data-view-link="shopping">Générer les courses</button>
+          <button class="button secondary-button" id="clearWeek">Effacer</button>
+          <button class="button secondary-button" data-view-link="shopping">Générer les courses</button>
         </div>
 
         <section class="today-card" id="todayCard">
@@ -116,7 +116,7 @@
             <h1>Mes recettes</h1>
             <p>Gardez toutes vos bonnes idées au même endroit.</p>
           </div>
-          <button class="primary-button" id="openRecipeModal">＋ Ajouter une recette</button>
+          <button class="button primary-button" id="openRecipeModal">＋ Ajouter une recette</button>
         </div>
         <div class="filters">
           <label class="search"><span>⌕</span><input id="recipeSearch" placeholder="Rechercher une recette…"></label>
@@ -134,8 +134,8 @@
             <h1>Liste de courses</h1>
             <p>Les ingrédients de vos menus, rangés par rayon.</p>
           </div>
-          <div class="heading-actions"><button class="secondary-button" id="uncheckAll">Tout décocher</button><button
-              class="primary-button" id="addShopping">＋ Ajouter</button></div>
+          <div class="heading-actions"><button class="button secondary-button" id="uncheckAll">Tout décocher</button><button
+              class="button primary-button" id="addShopping">＋ Ajouter</button></div>
         </div>
         <div class="shopping-progress">
           <div><strong id="progressText">0 sur 8 articles</strong><span>Votre panier avance tranquillement</span></div>
@@ -161,7 +161,7 @@
             <h1>Mon frigo</h1>
             <p>Voyez ce que vous avez et cuisinez avant que ça ne se perde.</p>
           </div>
-          <button class="primary-button" id="addFridge">＋ Ajouter un aliment</button>
+          <button class="button primary-button" id="addFridge">＋ Ajouter un aliment</button>
         </div>
         <div class="fridge-alert"><span>!</span>
           <div><strong>À consommer bientôt</strong>
@@ -271,7 +271,7 @@
 
                 <div id="ingredientsList"></div>
 
-                <button type="button" class="secondary-button" id="addIngredient">
+                <button type="button" class="button secondary-button" id="addIngredient">
                   + Ajouter un ingrédient
                 </button>
 
@@ -281,7 +281,7 @@
 
                 <div id="stepsList"></div>
 
-                <button type="button" class="secondary-button" id="addStep">
+                <button type="button" class="button secondary-button" id="addStep">
                   + Ajouter une étape
                 </button>
 
@@ -294,11 +294,11 @@
 
           <div class="modal-actions">
 
-            <button type="button" class="secondary-button" id="cancelRecipe">
+            <button type="button" class="button secondary-button" id="cancelRecipe">
               Annuler
             </button>
 
-            <button type="submit" form="recipeForm" class="primary-button" id="saveRecipe">
+            <button type="submit" form="recipeForm" class="button primary-button" id="saveRecipe">
               Enregistrer
             </button>
 
@@ -323,8 +323,10 @@
       <p class="eyebrow" id="modalEyebrow">NOUVELLE RECETTE</p>
       <h2 id="modalTitle">Ajouter une recette</h2>
       <div id="modalFields"></div>
-      <div class="modal-actions"><button class="secondary-button" value="cancel">Annuler</button><button
-          class="primary-button" value="default" id="modalSubmit">Enregistrer</button></div>
+      <div class="modal-actions">
+        <button class="button secondary-button" value="cancel">Annuler</button>
+        <button class="button primary-button" value="default" id="modalSubmit">Enregistrer</button>
+      </div>
     </form>
   </dialog>
   <div id="toast" role="status"></div>
