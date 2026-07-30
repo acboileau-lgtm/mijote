@@ -84,6 +84,8 @@ const addStep = $("#addStep");
 
 const recipeForm = $("#recipeForm");
 
+let currentRecipePhoto = "";
+
 // Mise à jour automatique du temps total
 ["recipePrepTime", "recipeCookTime", "recipeRestTime"].forEach(id => {
     const input = $("#" + id);
@@ -127,6 +129,22 @@ const OCCASIONS = [
   "Pique-nique",
   "Vacances"
 ];
+
+  const photoDropzone = $(".photo-dropzone");
+  const recipePhotoInput = $("#recipePhotoInput");
+
+  photoDropzone.addEventListener("click", () => {
+    recipePhotoInput.click();
+});
+
+recipePhotoInput.addEventListener("change", () => {
+
+    const file = recipePhotoInput.files[0];
+
+    previewRecipePhoto(file);
+
+});
+
 
 function createRecipe(data = {}) {
   return {
@@ -228,6 +246,21 @@ function updateTotalTime() {
         `Temps total : <strong>${total} min</strong>`;                    
 }
 
+function previewRecipePhoto(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+        currentRecipePhoto = reader.result;
+
+        recipePhotoPreview.src = currentRecipePhoto;
+        recipePhotoPreview.hidden = false;
+        photoPlaceholder.hidden = true;
+    };
+
+    reader.readAsDataURL(file);
+}
 
 recipeForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -244,6 +277,7 @@ recipeForm.addEventListener("submit", (event) => {
   const cookTime = Number($("#recipeCookTime").value);
   const restTime = Number($("#recipeRestTime").value);
   const portions = Number($("#recipePortions").value);
+
   if (prepTime < 0 || cookTime < 0 || restTime < 0) {
     alert("Les temps ne peuvent pas être négatifs.");
     return;
@@ -287,7 +321,10 @@ recipeForm.addEventListener("submit", (event) => {
     categories,
 
     ingredients,
-    steps
+    steps,
+
+    photo: currentRecipePhoto
+
 });
 console.log("Recette créée :", recipe);
     
@@ -344,6 +381,13 @@ renderCategoryChips($("#recipeCategories"));
   ingredientsList.innerHTML = "";
   stepsList.innerHTML = "";
 
+  currentRecipePhoto = "";
+
+  recipePhotoInput.value = "";
+  recipePhotoPreview.src = "";
+  recipePhotoPreview.hidden = true;
+  photoPlaceholder.hidden = false;
+
   // Une ligne par défaut
   addIngredientLine();
   addStepLine();
@@ -362,6 +406,7 @@ cancelRecipe.addEventListener("click", () => {
 recipeSearch.addEventListener("input", () => {
   console.log(recipeSearch.value);
 });
+
 
 
 
