@@ -65,6 +65,54 @@
 
   --button-height: 42px;
 
+  /* ==========================
+   CHIP
+========================== */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+
+    min-height: 36px;
+    padding: 0 var(--space-md);
+
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+
+    background: var(--paper);
+    color: var(--ink);
+
+    font: inherit;
+    cursor: pointer;
+
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.chip:hover {
+    background: var(--sage);
+}
+
+.chip:focus-visible {
+    outline: 2px solid var(--forest);
+    outline-offset: 2px;
+}
+
+.chip[aria-pressed="true"] {
+    background: var(--forest);
+    border-color: var(--forest);
+    color: var(--paper);
+}
+
+.chip:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
 }
 
 
@@ -161,6 +209,63 @@ h2 { font-size: 28px; }
     background: var(--cream);
 }
 
+/* ==========================
+   CHIP
+========================== */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+
+    min-height: 36px;
+    padding: 0 var(--space-md);
+
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+
+    background: var(--paper);
+    color: var(--ink);
+
+    font: inherit;
+    cursor: pointer;
+
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.chip:hover {
+    background: var(--sage);
+}
+
+.chip:focus-visible {
+    outline: 2px solid var(--forest);
+    outline-offset: 2px;
+}
+
+.chip[aria-pressed="true"] {
+    background: var(--forest);
+    border-color: var(--forest);
+    color: var(--paper);
+
+    box-shadow: var(--shadow-sm);
+}
+
+.chip:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.chip:active {
+    transform: scale(.97);
+}
+
+
+
 .week-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
 .icon-button { width: 42px; padding: 0; }
 .today-button { margin-left: 3px; }
@@ -241,7 +346,12 @@ h2 { font-size: 28px; }
 .fridge-alert p { margin: 3px 0 0; color: #7d6c51; font-size: 12px; }
 .fridge-alert button { border: 0; background: transparent; color: #7c5b2d; font-weight: 700; font-size: 12px; }
 .fridge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.fridge-card { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.fridge-card { 
+    padding: 18px; 
+    border: 1px solid var(--line); 
+    border-radius: 12px; 
+    background: var(--paper); 
+}
 .food-icon { font-size: 30px; }
 .fridge-card h3 { margin: 12px 0 3px; font-family: "Playfair Display", serif; font-size: 17px; }
 .fridge-card p { margin: 0; color: var(--muted); font-size: 11px; }
@@ -459,6 +569,13 @@ dialog form { position: relative; padding: 30px; }
     gap:8px;
 
     font-weight:600;
+}
+
+.recipe-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
 }
 
 .input {

@@ -1,3 +1,13 @@
+import {
+    getAllCategories,
+    getCategoryById,
+    getCategoryLabel,
+    getCategoryIcon
+} from "./data/categories.js";
+
+
+
+
 const defaultState = {
   weekStart: "wednesday",
   recipes: [
@@ -129,6 +139,7 @@ function createRecipe(data = {}) {
 
     // Classement
     category: data.category ?? "Plat",
+    categories: data.categories ?? [],
     tags: data.tags ?? [],
 
     // Apparence
@@ -249,6 +260,11 @@ recipeForm.addEventListener("submit", (event) => {
 
   const recipeId = recipeForm.dataset.recipeId;
  
+  const categories = [
+    ...$$('#recipeCategories .chip[aria-pressed="true"]')
+  ].map(chip => chip.dataset.categoryId);
+  console.log(categories);
+
   const recipe = createRecipe({
     id: recipeId || undefined,
 
@@ -260,6 +276,8 @@ recipeForm.addEventListener("submit", (event) => {
     restTime,
 
     portions,
+
+    categories,
 
     ingredients,
     steps
@@ -308,6 +326,10 @@ openRecipeModal.addEventListener("click", () => {
   $("#recipeCookTime").value = 30;
   $("#recipeRestTime").value = 0;
   $("#recipePortions").value = 4;
+
+// Affiche les catégories
+console.log($("#recipeCategories"));
+renderCategoryChips($("#recipeCategories"));
 
   // On vide les listes
   ingredientsList.innerHTML = "";
@@ -745,6 +767,41 @@ function renderFridge() {
     </article>`).join("");
 }
 
+function renderCategoryChips(container, selectedCategories = []) {
+
+    container.innerHTML = getAllCategories()
+        .map(category => `
+            <button
+                type="button"
+                class="chip"
+                aria-pressed="${selectedCategories.includes(category.id)}"
+                data-category-id="${category.id}">
+                ${category.icon} ${category.label}
+            </button>
+        `)
+        .join("");
+
+    container
+    .querySelectorAll(".chip")
+    .forEach(chip => {
+
+        chip.addEventListener("click", () => {
+
+            const isSelected =
+                chip.getAttribute("aria-pressed") === "true";
+
+            chip.setAttribute(
+                "aria-pressed",
+                String(!isSelected)
+            );
+
+        });
+
+    });
+
+    // Les événements viendront ici
+}
+
 function openModal(type, payload = {}) {
   const modal = $("#modal");
   const title = $("#modalTitle");
@@ -763,10 +820,39 @@ function openModal(type, payload = {}) {
   // À supprimer lorsque recipeForm sera entièrement migré.
   if (type === "recipe") {
     eyebrow.textContent = "NOUVELLE RECETTE"; title.textContent = "Ajouter une recette";
-    fields.innerHTML = `<div class="field"><label>Nom de la recette</label><input name="name" required placeholder="Ex. Gratin de courgettes"></div>
-      <div class="field-row"><div class="field"><label>Temps (minutes)</label><input name="time" type="number" min="5" value="30" required></div>
-      <div class="field"><label>Portions</label><input name="portions" type="number" min="1" value="4" required></div></div>
-      <div class="field"><label>Type</label><select name="veggie"><option value="false">Tous les plats</option><option value="true">Végétarien</option></select></div>`;
+    fields.innerHTML = `
+  <div class="field">
+    <label>Nom de la recette</label>
+    <input name="name" required placeholder="Ex. Gratin de courgettes">
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>Temps (minutes)</label>
+      <input name="time" type="number" min="5" value="30" required>
+    </div>
+
+    <div class="field">
+      <label>Portions</label>
+      <input name="portions" type="number" min="1" value="4" required>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Type</label>
+    <select name="veggie">
+      <option value="false">Tous les plats</option>
+      <option value="true">Végétarien</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Catégories</label>
+    <div id="recipeCategories"></div>
+  </div>
+`;
+renderCategoryChips($("#recipeCategories"));
+
   } else if (type === "meal") {
     eyebrow.textContent = "PLANIFIER UN REPAS"; title.textContent = "Choisir une recette";
     fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${getTotalTime(r)} min</option>`).join("")}</select></div>`;
@@ -786,31 +872,32 @@ function openModal(type, payload = {}) {
             <label>Créneau</label>
 
             <select name="slot" required>
-    <option value="">Choisir...</option>
+                <option value="">Choisir...</option>
 
-    ${getWeekDays().flatMap((dayInfo, day) =>
-      ["lunch", "dinner"].map(slot => {
+                ${getWeekDays().flatMap((dayInfo, day) =>
+                  ["lunch", "dinner"].map(slot => {
 
-        const key = `${day}-${slot}`;
-        const plannedId = state.meals[key];
+                    const key = `${day}-${slot}`;
+                    const plannedId = state.meals[key];
 
-        const plannedRecipe = state.recipes.find(r => r.id == plannedId);
+                    const plannedRecipe = state.recipes.find(r => r.id == plannedId);
 
-        const label =
-          `${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"}` +
-          (plannedRecipe
-            ? ` 🔄 ${plannedRecipe.name}`
-            : " 🟢 Libre");
+                    const label =
+                      `${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"}` +
+                      (plannedRecipe
+                        ? ` 🔄 ${plannedRecipe.name}`
+                        : " 🟢 Libre");
 
-        return `<option value="${key}">${label}</option>`;
-      })
-    ).join("")
-      }
+                    return `<option value="${key}">${label}</option>`;
+                  })
+                ).join("")
+                  }
 
-</select>
+            </select>
         </div>
     `;
   }
+
   else if (type === "complete-week") {
 
     eyebrow.textContent = "PLANNING INTELLIGENT";

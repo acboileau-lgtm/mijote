@@ -120,9 +120,26 @@
         </div>
         <div class="filters">
           <label class="search"><span>⌕</span><input id="recipeSearch" placeholder="Rechercher une recette…"></label>
-          <button class="filter-chip active" data-filter="all">Toutes</button>
-          <button class="filter-chip" data-filter="veggie">Végétariennes</button>
-          <button class="filter-chip" data-filter="quick">Rapides</button>
+          <button
+              class="chip filter-chip"
+              data-filter="all"
+              aria-pressed="true">
+              Toutes
+          </button>
+
+          <button
+              class="chip filter-chip"
+              data-filter="veggie"
+              aria-pressed="false">
+              Végétariennes
+          </button>
+
+          <button
+              class="chip filter-chip"
+              data-filter="quick"
+              aria-pressed="false">
+              Rapides
+          </button>
         </div>
         <div class="recipe-grid" id="recipeGrid"></div>
       </section>
@@ -214,7 +231,7 @@
 
               <div class="recipe-top-grid">
 
-                <section class="recipe-card">
+                <section class="recipe-card card">
 
                   <h3>📋 Informations</h3>
 
@@ -237,9 +254,15 @@
 
                   </div>
 
+                  <div class="field">
+                    <label>🏷️ Catégories</label>
+
+                    <div id="recipeCategories" class="recipe-categories"></div>
+                </div>
+
               </section>
 
-                <section class="recipe-card">
+                <section class="recipe-card card">
                   <h3>⏱ Temps</h3>
                     <div class="recipe-times">
                     <label>
@@ -307,6 +330,25 @@
         </div>
 
       </div>
+
+
+      <h3>Test Chip</h3>
+
+<button type="button" class="chip">
+    🍝 Pâtes
+</button>
+
+<button type="button" class="chip" aria-pressed="true">
+    🍰 Dessert
+</button>
+
+<button type="button" class="chip">
+    🐟 Poisson
+</button>
+
+<h3>fin Test Chip</h3>
+
+
     </main>
   </div>
 
@@ -330,7 +372,7 @@
     </form>
   </dialog>
   <div id="toast" role="status"></div>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>
