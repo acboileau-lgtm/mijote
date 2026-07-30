@@ -230,7 +230,7 @@ h2 { font-size: 28px; }
 .shopping-item input { width: 17px; height: 17px; accent-color: var(--forest); }
 .shopping-item small { color: var(--muted); }
 .shopping-item.checked span, .shopping-item.checked small { opacity: .45; text-decoration: line-through; }
-.summary-card { padding: 24px; border-radius: 14px; background: #dfe8dc; }
+.summary-card { padding: var(--space-lg); border-radius: 14px; background: #dfe8dc; }
 .summary-card h3 { font-family: "Playfair Display", serif; font-size: 22px; margin: 14px 0 7px; }
 .summary-card p { color: #617067; font-size: 12px; line-height: 1.6; }
 .summary-card hr { border: 0; border-top: 1px solid #c7d2c3; margin: 18px 0; }
@@ -255,7 +255,7 @@ dialog form { position: relative; padding: 30px; }
 .field input, .field select { width: 100%; height: 43px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: white; outline: 0; }
 .field input:focus, .field select:focus { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(47,91,70,.1); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--space-lg); }
 .recipe-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 12px; }
 .recipe-detail-meta span { padding: 7px 10px; border-radius: 20px; background: #edf0e8; color: #536559; font-size: 11px; font-weight: 700; }
 .recipe-detail-tags { margin-bottom: 22px; }
@@ -310,7 +310,7 @@ dialog form { position: relative; padding: 30px; }
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 24px;
+  padding: var(--space-lg);
   margin-bottom: 24px;
 }
 
@@ -349,7 +349,7 @@ dialog form { position: relative; padding: 30px; }
 .today-meal {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: border-radius;
   padding: 18px;
   min-height: 140px;
 }
@@ -603,7 +603,7 @@ dialog form { position: relative; padding: 30px; }
 }
 
 .recipe-total-time {
-    margin-top: 24px;
+    margin-top: var(--space-lg);
     padding-top: 18px;
     border-top: 1px solid var(--line);
 
@@ -637,7 +637,7 @@ dialog form { position: relative; padding: 30px; }
 .recipe-top-grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    gap: 24px;
+    gap: var(--space-lg);
     margin: 24px 0;
     align-items: start;
 }
@@ -648,7 +648,7 @@ dialog form { position: relative; padding: 30px; }
 
 .photo-dropzone {
     border: 2px dashed var(--line);
-    border-radius: 18px;
+    border-radius: border-radius;
     background: var(--paper);
     min-height: 220px;
 
