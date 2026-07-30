@@ -197,7 +197,7 @@ function getTotalTime(recipe) {
 }
 
 function loadRecipe(recipe) {
-
+  
   $("#recipeName").value = recipe.name;
   $("#recipeEmoji").value = recipe.emoji;
 
@@ -206,6 +206,12 @@ function loadRecipe(recipe) {
   $("#recipeRestTime").value = recipe.restTime;
 
   $("#recipePortions").value = recipe.portions;
+
+  renderCategoryChips(
+  $("#recipeCategories"),
+  recipe.categories ?? []
+);
+
 
   updateTotalTime();
 }
@@ -266,6 +272,7 @@ recipeForm.addEventListener("submit", (event) => {
   console.log(categories);
 
   const recipe = createRecipe({
+    
     id: recipeId || undefined,
 
     name,
@@ -282,6 +289,8 @@ recipeForm.addEventListener("submit", (event) => {
     ingredients,
     steps
 });
+console.log("Recette créée :", recipe);
+    
 
 
 
@@ -1135,6 +1144,7 @@ document.addEventListener("click", e => {
     const recipe = state.recipes.find(r => r.id == id);
     console.log("ID recherché :", id);
     console.log("Recette trouvée :", recipe);
+    console.log("recipe.categories =", recipe.categories);
     console.log(recipe);
     $("#recipeModalTitle").textContent = "Modifier la recette";
     $("#recipeModalSubtitle").textContent = recipe.name;
