@@ -229,7 +229,18 @@ function loadRecipe(recipe) {
   $("#recipeCategories"),
   recipe.categories ?? []
 );
+  // Chargement de la photo
+  currentRecipePhoto = recipe.photo ?? "";
 
+  if (currentRecipePhoto) {
+      recipePhotoPreview.src = currentRecipePhoto;
+      recipePhotoPreview.hidden = false;
+      photoPlaceholder.hidden = true;
+  } else {
+      recipePhotoPreview.src = "";
+      recipePhotoPreview.hidden = true;
+      photoPlaceholder.hidden = false;
+  }
 
   updateTotalTime();
 }
@@ -251,12 +262,47 @@ function previewRecipePhoto(file) {
 
     const reader = new FileReader();
 
-    reader.onload = () => {
-        currentRecipePhoto = reader.result;
+    reader.onload = (event) => {
 
-        recipePhotoPreview.src = currentRecipePhoto;
-        recipePhotoPreview.hidden = false;
-        photoPlaceholder.hidden = true;
+        const img = new Image();
+
+        img.onload = () => {
+
+          const MAX_WIDTH = 800;
+
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+              height = Math.round(height * MAX_WIDTH / width);
+              width = MAX_WIDTH;
+          }
+
+          console.log("Nouvelle taille :", width, height);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Création de la photo optimisée
+          currentRecipePhoto = canvas.toDataURL("image/jpeg", 0.8);
+
+          // Aperçu
+          recipePhotoPreview.src = currentRecipePhoto;
+          recipePhotoPreview.hidden = false;
+          photoPlaceholder.hidden = true;
+
+          console.log(
+              "Taille Base64 :",
+              Math.round(currentRecipePhoto.length / 1024),
+              "Ko"
+          );
+      };
+
+        img.src = event.target.result;
     };
 
     reader.readAsDataURL(file);
@@ -373,6 +419,7 @@ openRecipeModal.addEventListener("click", () => {
   $("#recipeRestTime").value = 0;
   $("#recipePortions").value = 4;
 
+  
 // Affiche les catégories
 console.log($("#recipeCategories"));
 renderCategoryChips($("#recipeCategories"));
