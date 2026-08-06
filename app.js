@@ -84,6 +84,8 @@ const addStep = $("#addStep");
 
 const recipeForm = $("#recipeForm");
 
+let currentRecipePhoto = "";
+
 // Mise à jour automatique du temps total
 ["recipePrepTime", "recipeCookTime", "recipeRestTime"].forEach(id => {
     const input = $("#" + id);
@@ -127,6 +129,22 @@ const OCCASIONS = [
   "Pique-nique",
   "Vacances"
 ];
+
+  const photoDropzone = $(".photo-dropzone");
+  const recipePhotoInput = $("#recipePhotoInput");
+
+  photoDropzone.addEventListener("click", () => {
+    recipePhotoInput.click();
+});
+
+recipePhotoInput.addEventListener("change", () => {
+
+    const file = recipePhotoInput.files[0];
+
+    previewRecipePhoto(file);
+
+});
+
 
 function createRecipe(data = {}) {
   return {
@@ -211,7 +229,18 @@ function loadRecipe(recipe) {
   $("#recipeCategories"),
   recipe.categories ?? []
 );
+  // Chargement de la photo
+  currentRecipePhoto = recipe.photo ?? "";
 
+  if (currentRecipePhoto) {
+      recipePhotoPreview.src = currentRecipePhoto;
+      recipePhotoPreview.hidden = false;
+      photoPlaceholder.hidden = true;
+  } else {
+      recipePhotoPreview.src = "";
+      recipePhotoPreview.hidden = true;
+      photoPlaceholder.hidden = false;
+  }
 
   updateTotalTime();
 }
@@ -228,6 +257,56 @@ function updateTotalTime() {
         `Temps total : <strong>${total} min</strong>`;                    
 }
 
+function previewRecipePhoto(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+
+        const img = new Image();
+
+        img.onload = () => {
+
+          const MAX_WIDTH = 800;
+
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+              height = Math.round(height * MAX_WIDTH / width);
+              width = MAX_WIDTH;
+          }
+
+          console.log("Nouvelle taille :", width, height);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Création de la photo optimisée
+          currentRecipePhoto = canvas.toDataURL("image/jpeg", 0.8);
+
+          // Aperçu
+          recipePhotoPreview.src = currentRecipePhoto;
+          recipePhotoPreview.hidden = false;
+          photoPlaceholder.hidden = true;
+
+          console.log(
+              "Taille Base64 :",
+              Math.round(currentRecipePhoto.length / 1024),
+              "Ko"
+          );
+      };
+
+        img.src = event.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
 
 recipeForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -244,6 +323,7 @@ recipeForm.addEventListener("submit", (event) => {
   const cookTime = Number($("#recipeCookTime").value);
   const restTime = Number($("#recipeRestTime").value);
   const portions = Number($("#recipePortions").value);
+
   if (prepTime < 0 || cookTime < 0 || restTime < 0) {
     alert("Les temps ne peuvent pas être négatifs.");
     return;
@@ -287,7 +367,10 @@ recipeForm.addEventListener("submit", (event) => {
     categories,
 
     ingredients,
-    steps
+    steps,
+
+    photo: currentRecipePhoto
+
 });
 console.log("Recette créée :", recipe);
     
@@ -336,6 +419,7 @@ openRecipeModal.addEventListener("click", () => {
   $("#recipeRestTime").value = 0;
   $("#recipePortions").value = 4;
 
+  
 // Affiche les catégories
 console.log($("#recipeCategories"));
 renderCategoryChips($("#recipeCategories"));
@@ -343,6 +427,13 @@ renderCategoryChips($("#recipeCategories"));
   // On vide les listes
   ingredientsList.innerHTML = "";
   stepsList.innerHTML = "";
+
+  currentRecipePhoto = "";
+
+  recipePhotoInput.value = "";
+  recipePhotoPreview.src = "";
+  recipePhotoPreview.hidden = true;
+  photoPlaceholder.hidden = false;
 
   // Une ligne par défaut
   addIngredientLine();
@@ -362,6 +453,7 @@ cancelRecipe.addEventListener("click", () => {
 recipeSearch.addEventListener("input", () => {
   console.log(recipeSearch.value);
 });
+
 
 
 
