@@ -8,15 +8,11 @@ import {
 } from "./data/categories.js";
 
 import {
-    openDatabase
+    openDatabase,
+    saveRecipeToDB,
+    getAllRecipes,
+    deleteRecipeFromDB
 } from "./js/storage.js";
-
-
-const DB_NAME = "mijote-db";
-const DB_VERSION = 1;
-const STORE_RECIPES = "recipes";
-
-let db = null;
 
 
 
@@ -98,9 +94,6 @@ const addStep = $("#addStep");
 const recipeForm = $("#recipeForm");
 
 let currentRecipePhoto = "";
-
-
-
 
 // Mise à jour automatique du temps total
 ["recipePrepTime", "recipeCookTime", "recipeRestTime"].forEach(id => {
@@ -322,7 +315,7 @@ function previewRecipePhoto(file) {
     reader.readAsDataURL(file);
 }
 
-recipeForm.addEventListener("submit", (event) => {
+recipeForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const name = $("#recipeName").value.trim();
@@ -387,9 +380,6 @@ recipeForm.addEventListener("submit", (event) => {
 
 });
 
-    
-
-
 
   if (recipeId) {
 
@@ -405,6 +395,7 @@ recipeForm.addEventListener("submit", (event) => {
 
   }
 
+  await saveRecipeToDB(recipe);
 
   save();
   renderRecipes();
@@ -836,7 +827,9 @@ function renderRecipes(filter = "all", query = "") {
       <div class="recipe-content">
         <h3>${r.name}</h3>
         <p class="recipe-meta">◷ ${getTotalTime(r)} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
-        <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+        <div class="tags">
+          ${(r.tags ?? []).map(t => `<span class="tag">${t}</span>`).join("")}
+        </div>
         <div class="recipe-actions">
 
           <button data-plan-recipe="${r.id}">
@@ -1222,7 +1215,7 @@ $("#modalForm").addEventListener("submit", e => {
   save(); $("#modal").close();
 });
 
-document.addEventListener("click", e => {
+document.addEventListener("click", async (e) => {
   const nav = e.target.closest("[data-view], [data-view-link]");
   if (nav) navigate(nav.dataset.view || nav.dataset.viewLink);
   const addMeal = e.target.closest("[data-add-meal]");
@@ -1281,6 +1274,8 @@ document.addEventListener("click", e => {
   if (delRecipe && confirm("Supprimer cette recette du carnet ?")) {
 
     const id = delRecipe.dataset.deleteRecipe;
+
+    await deleteRecipeFromDB(id);
 
     state.recipes = state.recipes.filter(r => r.id != id);
 
@@ -1520,11 +1515,39 @@ $("#nextWeek").addEventListener("click", () => {
   renderWeek();
 });
 
-renderWeek();
-renderRecipes();
-renderShopping();
-renderFridge();
+async function initializeRecipes(defaultRecipes) {
 
-openDatabase();
+    const recipes = await getAllRecipes();
+
+    if (recipes.length > 0) {
+        return recipes;
+    }
+
+    for (const recipe of defaultRecipes) {
+        await saveRecipeToDB(createRecipe(recipe));
+    }
+
+    return await getAllRecipes();
+}
+
+async function initializeApp() {
+
+    await openDatabase();
+
+    state.recipes = (await initializeRecipes(defaultState.recipes))
+    .map(createRecipe);
+
+    renderWeek();
+    renderRecipes();
+    renderShopping();
+    renderFridge();
+
+}
+
+initializeApp();
+
+
+
+
 
 

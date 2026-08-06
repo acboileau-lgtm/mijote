@@ -24,24 +24,53 @@ async function openDatabase() {
             console.log("✅ IndexedDB ouverte");
             resolve(db);
         };
-
     });
-
 }
-
-
 
 async function saveRecipeToDB(recipe) {
 
-    const transaction = db.transaction(STORE_RECIPES, "readwrite");
+    console.log("💾 saveRecipeToDB appelée", recipe.name);
 
+    const transaction = db.transaction(STORE_RECIPES, "readwrite");
+    const store = transaction.objectStore(STORE_RECIPES);
+
+    const request = store.put(recipe);
+
+    request.onsuccess = () => {
+        console.log("✅ Enregistrement OK");
+    };
+
+    request.onerror = () => {
+        console.error("❌ Erreur IndexedDB :", request.error);
+    };
+}
+
+async function deleteRecipeFromDB(id) {
+    const transaction = db.transaction(STORE_RECIPES, "readwrite");
+    const store = transaction.objectStore(STORE_RECIPES);
+
+    return new Promise((resolve, reject) => {
+        const request = store.delete(id);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+
+async function getAllRecipes() {
+
+    const transaction = db.transaction(STORE_RECIPES, "readonly");
     const store = transaction.objectStore(STORE_RECIPES);
 
     return new Promise((resolve, reject) => {
 
-        const request = store.put(recipe);
+        const request = store.getAll();
 
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => {
+            console.log("📖", request.result.length, "recette(s) chargée(s)");
+            resolve(request.result);
+        };
 
         request.onerror = () => reject(request.error);
 
@@ -49,7 +78,13 @@ async function saveRecipeToDB(recipe) {
 
 }
 
+
+
+
+
 export {
     openDatabase,
-    saveRecipeToDB
+    saveRecipeToDB,
+    getAllRecipes,
+    deleteRecipeFromDB
 };
