@@ -117,28 +117,20 @@
             <p>Gardez toutes vos bonnes idées au même endroit.</p>
           </div>
           <button class="button primary-button" id="openRecipeModal">＋ Ajouter une recette</button>
+          <button class="button secondary-button" id="openImportModal">＋ Importer une recette</button>
         </div>
         <div class="filters">
           <label class="search"><span>⌕</span><input id="recipeSearch" placeholder="Rechercher une recette…"></label>
-          <button
-              class="chip filter-chip"
-              data-filter="all"
-              aria-pressed="true">
-              Toutes
+          <button class="chip filter-chip" data-filter="all" aria-pressed="true">
+            Toutes
           </button>
 
-          <button
-              class="chip filter-chip"
-              data-filter="veggie"
-              aria-pressed="false">
-              Végétariennes
+          <button class="chip filter-chip" data-filter="veggie" aria-pressed="false">
+            Végétariennes
           </button>
 
-          <button
-              class="chip filter-chip"
-              data-filter="quick"
-              aria-pressed="false">
-              Rapides
+          <button class="chip filter-chip" data-filter="quick" aria-pressed="false">
+            Rapides
           </button>
         </div>
         <div class="recipe-grid" id="recipeGrid"></div>
@@ -151,8 +143,8 @@
             <h1>Liste de courses</h1>
             <p>Les ingrédients de vos menus, rangés par rayon.</p>
           </div>
-          <div class="heading-actions"><button class="button secondary-button" id="uncheckAll">Tout décocher</button><button
-              class="button primary-button" id="addShopping">＋ Ajouter</button></div>
+          <div class="heading-actions"><button class="button secondary-button" id="uncheckAll">Tout
+              décocher</button><button class="button primary-button" id="addShopping">＋ Ajouter</button></div>
         </div>
         <div class="shopping-progress">
           <div><strong id="progressText">0 sur 8 articles</strong><span>Votre panier avance tranquillement</span></div>
@@ -214,35 +206,28 @@
 
                 <div class="photo-dropzone">
 
-                <img
-                    id="recipePhotoPreview"
-                    class="recipe-photo-preview"
-                    hidden>
+                  <img id="recipePhotoPreview" class="recipe-photo-preview" hidden>
 
-                <div id="photoPlaceholder" class="photo-placeholder">
+                  <div id="photoPlaceholder" class="photo-placeholder">
 
                     <div class="photo-icon">📷</div>
 
                     <div class="photo-text">
-                        Cliquez pour ajouter une photo
+                      Cliquez pour ajouter une photo
                     </div>
 
                     <div class="photo-subtext">
-                        JPG • PNG
+                      JPG • PNG
                     </div>
+
+                  </div>
 
                 </div>
 
-            </div>
+                <input type="file" id="recipePhotoInput" accept="image/*" hidden>
 
-                <input
-                  type="file"
-                  id="recipePhotoInput"
-                  accept="image/*"
-                  hidden>
+              </section>
 
-            </section>
-              
 
               <div class="recipe-top-grid">
 
@@ -252,20 +237,15 @@
 
                   <div class="recipe-info-grid">
 
-                      <label>
-                          🍽 Portions
-                          <input type="number"
-                                id="recipePortions"
-                                placeholder="4">
-                      </label>
+                    <label>
+                      🍽 Portions
+                      <input type="number" id="recipePortions" placeholder="4">
+                    </label>
 
-                      <label>
-                          🍝 Emoji
-                          <input type="text"
-                                id="recipeEmoji"
-                                placeholder="🍝"
-                                maxlength="2">
-                      </label>
+                    <label>
+                      🍝 Emoji
+                      <input type="text" id="recipeEmoji" placeholder="🍝" maxlength="2">
+                    </label>
 
                   </div>
 
@@ -273,33 +253,33 @@
                     <label>🏷️ Catégories</label>
 
                     <div id="recipeCategories" class="recipe-categories"></div>
-                </div>
+                  </div>
 
-              </section>
+                </section>
 
                 <section class="recipe-card card">
                   <h3>⏱ Temps</h3>
-                    <div class="recipe-times">
+                  <div class="recipe-times">
                     <label>
-                        ⏱ Préparation
-                        <input type="number" id="recipePrepTime" placeholder="20">
+                      ⏱ Préparation
+                      <input type="number" id="recipePrepTime" placeholder="20">
                     </label>
                     <label>
-                        🔥 Cuisson
-                        <input type="number" id="recipeCookTime" placeholder="30">
+                      🔥 Cuisson
+                      <input type="number" id="recipeCookTime" placeholder="30">
                     </label>
                     <label>
-                        💤 Repos
-                        <input type="number" id="recipeRestTime" placeholder="0">
+                      💤 Repos
+                      <input type="number" id="recipeRestTime" placeholder="0">
                     </label>
-                </div>
-                <div id="recipeTotalTime" class="recipe-total-time">
+                  </div>
+                  <div id="recipeTotalTime" class="recipe-total-time">
                     Temps total : <strong>50 min</strong>
-                </div>
-              </section>
-            </div>
+                  </div>
+                </section>
+              </div>
 
-              
+
 
               <hr class="recipe-separator">
 
@@ -341,14 +321,46 @@
             </button>
 
           </div>
+        </div>
+      </div>
+      <div id="importModal" class="modal hidden">
+
+        <div class="modal-content">
+
+          <button class="modal-close" id="closeImportModal">✖</button>
+
+          <h2>📥 Importer une recette</h2>
+
+          <p>
+            Collez ici le texte d'une recette.
+          </p>
+
+          <textarea id="importRecipeText" rows="15" placeholder="Collez ici votre recette..." autofocus></textarea>
+
+
+          <div class="modal-actions">
+
+            <button id="cancelImport">
+              Annuler
+            </button>
+
+            <button id="startImport">
+              Importer
+            </button>
+
+          </div>
 
         </div>
 
       </div>
 
+  </div>
+
+  </div>
 
 
-    </main>
+
+  </main>
   </div>
 
   <nav class="mobile-nav">

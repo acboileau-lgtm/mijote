@@ -14,6 +14,10 @@ import {
     deleteRecipeFromDB
 } from "./js/storage.js";
 
+import { importRecipe } from "./js/import.js";
+
+import { createRecipe } from "./js/recipe.js";
+
 
 
 
@@ -93,6 +97,17 @@ const addStep = $("#addStep");
 
 const recipeForm = $("#recipeForm");
 
+const importModal = $("#importModal");
+const openImportModal = $("#openImportModal");
+console.log(openImportModal);
+const closeImportModal = $("#closeImportModal");
+const startImport = $("#startImport");
+const cancelImport = $("#cancelImport");
+const importRecipeText = $("#importRecipeText");
+
+
+
+
 let currentRecipePhoto = "";
 
 // Mise à jour automatique du temps total
@@ -154,70 +169,42 @@ recipePhotoInput.addEventListener("change", () => {
 
 });
 
+openImportModal.addEventListener("click", () => {
+    console.log("📥 clic Import");
+    importRecipeText.value = "";
+
+    importModal.classList.remove("hidden");
+    requestAnimationFrame(() => {
+    importRecipeText.focus();
+});
+    console.log(importModal);
+
+});
+
+closeImportModal.addEventListener("click", () => {
+
+    importModal.classList.add("hidden");
+
+});
+
+cancelImport.addEventListener("click", () => {
+
+    importModal.classList.add("hidden");
+
+});
+
+startImport.addEventListener("click", async () => {
+
+    const recipe = importRecipe(importRecipeText.value);
+
+    await addRecipe(recipe);
+
+    importModal.classList.add("hidden");
+
+});
 
 
 
-function createRecipe(data = {}) {
-  return {
-    // Identification
-    id: data.id ?? crypto.randomUUID(),
-    name: data.name ?? "",
-
-    // Photo
-    photo: data.photo ?? "",
-
-    // Classement
-    category: data.category ?? "Plat",
-    categories: data.categories ?? [],
-    tags: data.tags ?? [],
-
-    // Apparence
-    emoji: data.emoji ?? "🍽️",
-    color: data.color ?? "orange",
-
-    // Temps
-    prepTime: data.prepTime ?? data.time ?? 0,
-    cookTime: data.cookTime ?? 0,
-    restTime: data.restTime ?? 0,
-
-    // Portions
-    portions: data.portions ?? 4,
-
-    // Régimes
-    veggie: data.veggie ?? false,
-    vegan: data.vegan ?? false,
-    glutenFree: data.glutenFree ?? false,
-    lactoseFree: data.lactoseFree ?? false,
-
-    // Préférences
-    favorite: data.favorite ?? false,
-    archived: data.archived ?? false,
-
-    // Informations
-    difficulty: data.difficulty ?? 1,
-    price: data.price ?? 1,
-
-    // Organisation
-    equipment: data.equipment ?? [],
-    occasion: data.occasion ?? [],
-
-    // Contenu
-    ingredients: data.ingredients ?? [],
-    steps: data.steps ?? [],
-    notes: data.notes ?? "",
-
-    // Historique
-    lastCooked: data.lastCooked ?? null,
-    cookCount: data.cookCount ?? 0,
-    rating: data.rating ?? 0,
-
-    // Source
-    source: data.source ?? {
-      type: "",
-      value: ""
-    }
-  };
-}
 
 function getTotalTime(recipe) {
     return (recipe.prepTime || 0)
@@ -391,14 +378,11 @@ recipeForm.addEventListener("submit", async (event) => {
 
   } else {
 
-    state.recipes.push(recipe);
+    await addRecipe(recipe);
 
   }
 
-  await saveRecipeToDB(recipe);
-
-  save();
-  renderRecipes();
+ 
 
   $("#recipeName").value = "";
   $("#recipeEmoji").value = "";
@@ -459,8 +443,17 @@ recipeSearch.addEventListener("input", () => {
   
 });
 
+export async function addRecipe(recipe) {
 
+    state.recipes.push(recipe);
 
+    await saveRecipeToDB(recipe);
+
+    save();
+
+    renderRecipes();
+
+}
 
 function addIngredientLine(value = "") {
 

@@ -193,8 +193,17 @@ h2 { font-size: 28px; }
 .primary-button:hover {
     background: var(--forest-dark);
 }
+.secondary-button {
+    border: 1px solid var(--forest);
+    background: var(--forest);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
 
-.secondary-button,
+.secondary-button:hover {
+    background: var(--forest-dark);
+}
+
 .today-button,
 .icon-button {
     border: 1px solid var(--line);
@@ -202,7 +211,6 @@ h2 { font-size: 28px; }
     color: var(--ink);
 }
 
-.secondary-button:hover,
 .today-button:hover,
 .icon-button:hover {
     border-color: var(--forest);
