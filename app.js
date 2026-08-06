@@ -1,9 +1,22 @@
+
+
 import {
     getAllCategories,
     getCategoryById,
     getCategoryLabel,
     getCategoryIcon
 } from "./data/categories.js";
+
+import {
+    openDatabase
+} from "./js/storage.js";
+
+
+const DB_NAME = "mijote-db";
+const DB_VERSION = 1;
+const STORE_RECIPES = "recipes";
+
+let db = null;
 
 
 
@@ -86,6 +99,9 @@ const recipeForm = $("#recipeForm");
 
 let currentRecipePhoto = "";
 
+
+
+
 // Mise à jour automatique du temps total
 ["recipePrepTime", "recipeCookTime", "recipeRestTime"].forEach(id => {
     const input = $("#" + id);
@@ -144,6 +160,8 @@ recipePhotoInput.addEventListener("change", () => {
     previewRecipePhoto(file);
 
 });
+
+
 
 
 function createRecipe(data = {}) {
@@ -278,7 +296,7 @@ function previewRecipePhoto(file) {
               width = MAX_WIDTH;
           }
 
-          console.log("Nouvelle taille :", width, height);
+          
 
           const canvas = document.createElement("canvas");
           canvas.width = width;
@@ -295,11 +313,7 @@ function previewRecipePhoto(file) {
           recipePhotoPreview.hidden = false;
           photoPlaceholder.hidden = true;
 
-          console.log(
-              "Taille Base64 :",
-              Math.round(currentRecipePhoto.length / 1024),
-              "Ko"
-          );
+          
       };
 
         img.src = event.target.result;
@@ -349,7 +363,7 @@ recipeForm.addEventListener("submit", (event) => {
   const categories = [
     ...$$('#recipeCategories .chip[aria-pressed="true"]')
   ].map(chip => chip.dataset.categoryId);
-  console.log(categories);
+  
 
   const recipe = createRecipe({
     
@@ -372,7 +386,7 @@ recipeForm.addEventListener("submit", (event) => {
     photo: currentRecipePhoto
 
 });
-console.log("Recette créée :", recipe);
+
     
 
 
@@ -421,7 +435,7 @@ openRecipeModal.addEventListener("click", () => {
 
   
 // Affiche les catégories
-console.log($("#recipeCategories"));
+
 renderCategoryChips($("#recipeCategories"));
 
   // On vide les listes
@@ -451,7 +465,7 @@ cancelRecipe.addEventListener("click", () => {
 });
 
 recipeSearch.addEventListener("input", () => {
-  console.log(recipeSearch.value);
+  
 });
 
 
@@ -718,8 +732,7 @@ function updateTodayDate() {
 
 function renderSlot(day, slot) {
   const key = `${day}-${slot}`;
-  console.log(state.meals[key]);
-  console.log(typeof state.meals[key]);
+  
   const recipe = state.recipes.find(
     r => String(r.id) === String(state.meals[key])
   );
@@ -1102,7 +1115,7 @@ $("#modalForm").addEventListener("submit", e => {
   // À supprimer lorsque recipeForm sera entièrement migré.
   if (type === "recipe") {
     const id = Date.now();
-    console.log(">>> NOUVEAU PUSH");
+    
     state.recipes.push({
       // Identification
       id,
@@ -1162,8 +1175,7 @@ $("#modalForm").addEventListener("submit", e => {
     state.meals[payload.key] = data.recipe;
     renderWeek();
     showToast("Repas ajouté à la semaine");
-    console.log(data.recipe);
-    console.log(+data.recipe);
+    
   } else if (type === "complete-week") {
 
     completeWeek({
@@ -1176,12 +1188,10 @@ $("#modalForm").addEventListener("submit", e => {
 
   } else if (type === "plan") {
 
-    console.log("slot =", data.slot);
-    console.log("recipe id =", payload.recipe.id);
-    console.log("meal enregistré =", state.meals);
+
 
     state.meals[data.slot] = payload.recipe.id;
-    console.log("après =", state.meals);
+
 
     renderWeek();
     const slotLabel = {
@@ -1208,7 +1218,7 @@ $("#modalForm").addEventListener("submit", e => {
   } else {
     state.fridge.push({ id: Date.now(), name: data.name, qty: data.qty, expiry: data.expiry, soon: false, emoji: "🥬" }); renderFridge(); showToast("Aliment rangé dans le frigo");
   }
-  console.log(state.recipes);
+  
   save(); $("#modal").close();
 });
 
@@ -1234,10 +1244,7 @@ document.addEventListener("click", e => {
   if (editRecipe) {
     const id = editRecipe.dataset.editRecipe;
     const recipe = state.recipes.find(r => r.id == id);
-    console.log("ID recherché :", id);
-    console.log("Recette trouvée :", recipe);
-    console.log("recipe.categories =", recipe.categories);
-    console.log(recipe);
+
     $("#recipeModalTitle").textContent = "Modifier la recette";
     $("#recipeModalSubtitle").textContent = recipe.name;
     $("#saveRecipe").textContent = "Mettre à jour";
@@ -1415,11 +1422,10 @@ function completeWeek(options) {
       .map(id => state.recipes.find(r => r.id === id))
       .filter(r => r?.veggie).length;
 
-    console.log("Repas végétariens :", veggieCount);
+    
 
     missingVeggie = Math.max(0, 2 - veggieCount);
 
-    console.log("Végétariens à ajouter :", missingVeggie);
 
   }
 
@@ -1518,4 +1524,7 @@ renderWeek();
 renderRecipes();
 renderShopping();
 renderFridge();
+
+openDatabase();
+
 
