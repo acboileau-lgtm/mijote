@@ -32,7 +32,19 @@ function parseDuration(text) {
 
 function parsePortions(text) {
 
-    const match = text.match(/(\d+)\s*(?:personnes?|pers\.?|portions?)/i);
+    // 4 personnes / 4 pers. / 4 portions
+    let match = text.match(
+        /(\d+)\s*(?:personnes?|pers\.?|portions?)/i
+    );
+
+    if (match) {
+        return Number(match[1]);
+    }
+
+    // pour 4 / pour 4 personnes
+    match = text.match(
+        /pour\s+(\d+)(?:\s*(?:personnes?|pers\.?|portions?))?/i
+    );
 
     if (match) {
         return Number(match[1]);
@@ -40,8 +52,6 @@ function parsePortions(text) {
 
     return 0;
 }
-
-
 
 
 
@@ -92,6 +102,7 @@ export function importRecipe(text) {
         if (lowerLine.startsWith("préparation :")) {
 
             recipe.prepTime = parseDuration(line);
+            mode = "steps";
 
             continue;
         }
@@ -130,6 +141,16 @@ export function importRecipe(text) {
         }
     }
 
+
+    console.log("🧪 RECETTE IMPORTÉE :", {
+    name: recipe.name,
+    portions: recipe.portions,
+    prepTime: recipe.prepTime,
+    cookTime: recipe.cookTime,
+    restTime: recipe.restTime,
+    ingredients: recipe.ingredients,
+    steps: recipe.steps
+});
     
 
     return createRecipe({

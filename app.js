@@ -191,34 +191,49 @@ function getTotalTime(recipe) {
 }
 
 function loadRecipe(recipe) {
-  
-  $("#recipeName").value = recipe.name;
-  $("#recipeEmoji").value = recipe.emoji;
 
-  $("#recipePrepTime").value = recipe.prepTime;
-  $("#recipeCookTime").value = recipe.cookTime;
-  $("#recipeRestTime").value = recipe.restTime;
+    $("#recipeName").value = recipe.name;
+    $("#recipeEmoji").value = recipe.emoji;
 
-  $("#recipePortions").value = recipe.portions;
+    $("#recipePrepTime").value = recipe.prepTime;
+    $("#recipeCookTime").value = recipe.cookTime;
+    $("#recipeRestTime").value = recipe.restTime;
 
-  renderCategoryChips(
-  $("#recipeCategories"),
-  recipe.categories ?? []
-);
-  // Chargement de la photo
-  currentRecipePhoto = recipe.photo ?? "";
+    $("#recipePortions").value = recipe.portions;
 
-  if (currentRecipePhoto) {
-      recipePhotoPreview.src = currentRecipePhoto;
-      recipePhotoPreview.hidden = false;
-      photoPlaceholder.hidden = true;
-  } else {
-      recipePhotoPreview.src = "";
-      recipePhotoPreview.hidden = true;
-      photoPlaceholder.hidden = false;
-  }
+    renderCategoryChips(
+        $("#recipeCategories"),
+        recipe.categories ?? []
+    );
 
-  updateTotalTime();
+    // Chargement des ingrédients
+    ingredientsList.innerHTML = "";
+
+    (recipe.ingredients ?? []).forEach(ingredient => {
+        addIngredientLine(ingredient);
+    });
+
+    // Chargement des étapes
+    stepsList.innerHTML = "";
+
+    (recipe.steps ?? []).forEach(step => {
+        addStepLine(step);
+    });
+
+    // Chargement de la photo
+    currentRecipePhoto = recipe.photo ?? "";
+
+    if (currentRecipePhoto) {
+        recipePhotoPreview.src = currentRecipePhoto;
+        recipePhotoPreview.hidden = false;
+        photoPlaceholder.hidden = true;
+    } else {
+        recipePhotoPreview.src = "";
+        recipePhotoPreview.hidden = true;
+        photoPlaceholder.hidden = false;
+    }
+
+    updateTotalTime();
 }
 
 function updateTotalTime() {
@@ -430,7 +445,11 @@ recipeSearch.addEventListener("input", () => {
 export async function addRecipe(recipe) {
 
     state.recipes.push(recipe);
-
+console.log("🔎 APRÈS AJOUT :", {
+    name: recipe.name,
+    ingredients: recipe.ingredients,
+    steps: recipe.steps
+});
     await saveRecipeToDB(recipe);
 
     save();
@@ -1040,6 +1059,13 @@ renderCategoryChips($("#recipeCategories"));
       <div class="field"><label>À consommer dans</label><input name="expiry" value="7 jours"></div></div>`;
   } else if (type === "recipe-details") {
     const recipe = state.recipes.find(r => r.id === payload.recipeId);
+
+    console.log("🔎 RECETTE FICHE :", {
+    name: recipe?.name,
+    ingredients: recipe?.ingredients,
+    steps: recipe?.steps
+});
+
     if (!recipe) return;
     eyebrow.textContent = "FICHE RECETTE";
     title.textContent = `${recipe.emoji} ${recipe.name}`;
