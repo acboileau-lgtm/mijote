@@ -22,37 +22,15 @@ import { createRecipe } from "./js/recipe.js";
 
 
 const defaultState = {
-  weekStart: "wednesday",
-  recipes: [
-    { id: 1, name: "Curry de pois chiches", time: 25, portions: 4, veggie: true, emoji: "🍛", color: "yellow", tags: ["Végétarien", "Express"] },
-    { id: 2, name: "Saumon, riz & brocoli", time: 30, portions: 4, veggie: false, emoji: "🍣", color: "sage", tags: ["Équilibré"] },
-    { id: 3, name: "Lasagnes aux légumes", time: 55, portions: 6, veggie: true, emoji: "🍅", color: "rose", tags: ["Végétarien", "À partager"] },
-    { id: 4, name: "Poulet rôti du dimanche", time: 75, portions: 4, veggie: false, emoji: "🍗", color: "orange", tags: ["Familial"] },
-    { id: 5, name: "Tacos de poisson", time: 25, portions: 4, veggie: false, emoji: "🌮", color: "orange", tags: ["Express"] },
-    { id: 6, name: "Omelette du frigo", time: 15, portions: 2, veggie: true, emoji: "🍳", color: "yellow", tags: ["Anti-gaspi", "Express"] }
-  ],
-  meals: {
-    "0-lunch": 3, "2-dinner": 5, "4-lunch": 4, "5-lunch": 1, "6-dinner": 2
-  },
-  shopping: [
-    { id: 1, group: "Fruits & légumes", name: "Brocoli", qty: "2 têtes", checked: false },
-    { id: 2, group: "Fruits & légumes", name: "Citrons verts", qty: "3", checked: false },
-    { id: 3, group: "Fruits & légumes", name: "Tomates concassées", qty: "2 boîtes", checked: false },
-    { id: 4, group: "Épicerie", name: "Pois chiches", qty: "400 g", checked: false },
-    { id: 5, group: "Épicerie", name: "Riz basmati", qty: "500 g", checked: false },
-    { id: 6, group: "Crèmerie", name: "Crème fraîche", qty: "20 cl", checked: false },
-    { id: 7, group: "Poissonnerie", name: "Filets de saumon", qty: "4", checked: false },
-    { id: 8, group: "Boucherie", name: "Poulet fermier", qty: "1,5 kg", checked: false }
-  ],
-  fridge: [
-    { id: 1, name: "Œufs", qty: "6 pièces", expiry: "5 jours", soon: false, emoji: "🥚" },
-    { id: 2, name: "Courgettes", qty: "2 pièces", expiry: "2 jours", soon: true, emoji: "🥒" },
-    { id: 3, name: "Feta", qty: "150 g", expiry: "3 jours", soon: true, emoji: "🧀" },
-    { id: 4, name: "Épinards", qty: "1 sachet", expiry: "Aujourd’hui", soon: true, emoji: "🌿" },
-    { id: 5, name: "Yaourts", qty: "4 pots", expiry: "9 jours", soon: false, emoji: "🥛" },
-    { id: 6, name: "Carottes", qty: "5 pièces", expiry: "12 jours", soon: false, emoji: "🥕" },
-    { id: 7, name: "Comté", qty: "200 g", expiry: "18 jours", soon: false, emoji: "🧀" }
-  ]
+    weekStart: "wednesday",
+
+    recipes: [],
+
+    meals: {},
+
+    shopping: [],
+
+    fridge: []
 };
 
 let state;
@@ -373,14 +351,20 @@ recipeForm.addEventListener("submit", async (event) => {
     const index = state.recipes.findIndex(r => r.id == recipeId);
 
     if (index !== -1) {
-      state.recipes[index] = recipe;
+        state.recipes[index] = recipe;
+
+        // Sauvegarde de la recette modifiée dans IndexedDB
+        await saveRecipeToDB(recipe);
+
+        // Sauvegarde également l'état local
+        save();
     }
 
-  } else {
+} else {
 
     await addRecipe(recipe);
 
-  }
+}
 
  
 
@@ -791,7 +775,11 @@ function clearDragStyles() {
 }
 
 function renderRecipes(filter = "all", query = "") {
-
+console.log("🔎 CATEGORIES :", state.recipes.map(r => ({
+    id: r.id,
+    name: r.name,
+    categories: r.categories
+})));
   const recipes = state.recipes.filter(r =>
 
     r.name.toLowerCase().includes(query.toLowerCase()) &&
@@ -1508,28 +1496,19 @@ $("#nextWeek").addEventListener("click", () => {
   renderWeek();
 });
 
-async function initializeRecipes(defaultRecipes) {
-
-    const recipes = await getAllRecipes();
-
-    if (recipes.length > 0) {
-        return recipes;
-    }
-
-    for (const recipe of defaultRecipes) {
-        await saveRecipeToDB(createRecipe(recipe));
-    }
+async function initializeRecipes() {
 
     return await getAllRecipes();
+
 }
 
 async function initializeApp() {
 
     await openDatabase();
 
-    state.recipes = (await initializeRecipes(defaultState.recipes))
+    state.recipes = (await initializeRecipes())
     .map(createRecipe);
-
+   
     renderWeek();
     renderRecipes();
     renderShopping();

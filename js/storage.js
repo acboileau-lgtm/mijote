@@ -27,22 +27,58 @@ async function openDatabase() {
     });
 }
 
-async function saveRecipeToDB(recipe) {
+function saveRecipeToDB(recipe) {
 
-    console.log("💾 saveRecipeToDB appelée", recipe.name);
+    return new Promise((resolve, reject) => {
 
-    const transaction = db.transaction(STORE_RECIPES, "readwrite");
-    const store = transaction.objectStore(STORE_RECIPES);
+        console.log(
+            "💾 saveRecipeToDB appelée",
+            recipe.name,
+            "CATÉGORIES :",
+            recipe.categories
+        );
 
-    const request = store.put(recipe);
+        const transaction = db.transaction(STORE_RECIPES, "readwrite");
+        const store = transaction.objectStore(STORE_RECIPES);
 
-    request.onsuccess = () => {
-        console.log("✅ Enregistrement OK");
-    };
+        const request = store.put(recipe);
 
-    request.onerror = () => {
-        console.error("❌ Erreur IndexedDB :", request.error);
-    };
+        request.onerror = () => {
+
+            console.error(
+                "❌ Erreur IndexedDB :",
+                request.error
+            );
+
+            reject(request.error);
+
+        };
+
+        transaction.oncomplete = () => {
+
+            console.log(
+                "✅ Transaction IndexedDB terminée",
+                recipe.name,
+                "CATÉGORIES :",
+                recipe.categories
+            );
+
+            resolve();
+
+        };
+
+        transaction.onerror = () => {
+
+            console.error(
+                "❌ Erreur transaction IndexedDB :",
+                transaction.error
+            );
+
+            reject(transaction.error);
+
+        };
+
+    });
 }
 
 async function deleteRecipeFromDB(id) {
