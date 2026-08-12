@@ -1,15 +1,17 @@
 console.log("📥 import.js chargé");
 
 import { createRecipe } from "./recipe.js";
-import { saveRecipeToDB } from "./storage.js";
-import { addRecipe } from "../app.js";
+import { getCategoryById } from "../data/categories.js";
+
 
 function parseDuration(text) {
 
     const value = text.toLowerCase().trim();
 
-    // Exemple : 1 h 30 ou 1h30
-    const hoursMinutes = value.match(/(\d+)\s*h(?:eure?s?)?\s*(\d+)?/i);
+    // 1 h 30 / 1h30 / 1 heure 30
+    const hoursMinutes = value.match(
+        /(\d+)\s*h(?:eure?s?)?\s*(\d+)?/
+    );
 
     if (hoursMinutes) {
         const hours = Number(hoursMinutes[1]);
@@ -20,8 +22,10 @@ function parseDuration(text) {
         return hours * 60 + minutes;
     }
 
-    // Exemple : 75 min / 75 minutes
-    const minutes = value.match(/(\d+)\s*(?:min|minutes?)/i);
+    // 90 min / 90 minutes
+    const minutes = value.match(
+        /(\d+)\s*(?:min|minutes?)/i
+    );
 
     if (minutes) {
         return Number(minutes[1]);
@@ -30,30 +34,10 @@ function parseDuration(text) {
     return 0;
 }
 
-function parsePortions(text) {
 
-    // 4 personnes / 4 pers. / 4 portions
-    let match = text.match(
-        /(\d+)\s*(?:personnes?|pers\.?|portions?)/i
-    );
-
-    if (match) {
-        return Number(match[1]);
-    }
-
-    // pour 4 / pour 4 personnes
-    match = text.match(
-        /pour\s+(\d+)(?:\s*(?:personnes?|pers\.?|portions?))?/i
-    );
-
-    if (match) {
-        return Number(match[1]);
-    }
-
-    return 0;
-}
-
-
+// --------------------------------------------------
+// Import d'une recette depuis un texte
+// --------------------------------------------------
 
 export function importRecipe(text) {
 
@@ -66,101 +50,321 @@ export function importRecipe(text) {
 
     if (lines.length === 0) {
         alert("Aucune recette à importer.");
-        return;
+        return null;
     }
 
-    const recipe = {
-        name: lines[0],
+
+    // --------------------------------------------------
+    // Catégorie éventuelle trouvée au début du texte
+    // --------------------------------------------------
+
+    const knownCategories = [
+        "plat",
+        "entrée",
+        "entree",
+        "dessert",
+        "boisson",
+        "sauce",
+        "accompagnement",
+        "apéritif",
+        "aperitif"
+    ];
+
+    let category = "Plat";
+    let categories = [];
+    let emoji = "🍽️";
+    let startIndex = 0;
+    
+
+    const firstLine = lines[0].toLowerCase();
+
+    if (knownCategories.includes(firstLine)) {
+        category = lines[0];
+        categories = [firstLine];
+
+        const categoryData = getCategoryById(firstLine);
+
+        if (categoryData?.icon) {
+            emoji = categoryData.icon;
+        }
+
+        startIndex = 1;
+    }
+
+
+    // --------------------------------------------------
+    // Recherche du vrai nom de la recette
+    // --------------------------------------------------
+
+    const ignoredTitleLines = [
+        "ingrédients",
+        "ingredients",
+        "préparation",
+        "preparation",
+        "instructions",
+        "étapes",
+        "etapes"
+    ];
+
+    let name = "";
+
+    for (let i = startIndex; i < lines.length; i++) {
+
+        const candidate = lines[i].trim();
+        const lower = candidate.toLowerCase();
+
+        if (!ignoredTitleLines.includes(lower)) {
+            name = candidate;
+            startIndex = i + 1;
+            break;
+        }
+    }
+
+    if (!name) {
+        alert("Impossible de trouver le nom de la recette.");
+        return null;
+    }
+
+
+    // --------------------------------------------------
+    // Création de la recette
+    // --------------------------------------------------
+
+    const recipe = createRecipe({
+
+        name,
+        category,
+        emoji,
+
         prepTime: 0,
         cookTime: 0,
         restTime: 0,
+
         portions: 0,
+
         ingredients: [],
-        steps: []
-    };
+        steps: [],
 
-    let mode = "ingredients";
+        photo: "",
 
-    for (let i = 1; i < lines.length; i++) {
+        categories,
+
+        equipment: [],
+
+        occasion: []
+    });
+
+
+    // --------------------------------------------------
+    // Détection des sections
+    // --------------------------------------------------
+
+    let mode = "search";
+
+
+    for (let i = startIndex; i < lines.length; i++) {
 
         const line = lines[i];
         const lowerLine = line.toLowerCase();
 
+
+        // ----------------------------------------------
+        // Bruit provenant des sites web
+        // ----------------------------------------------
+
         if (
-            lowerLine.includes("personne") ||
-            lowerLine.includes("pers") ||
-            lowerLine.includes("portion")
+            lowerLine.includes("en lire moins") ||
+            lowerLine.includes("en lire plus")
         ) {
-            const portions = parsePortions(line);
-
-            if (portions > 0) {
-                recipe.portions = portions;
-                continue;
-            }
-        }
-
-        if (lowerLine.startsWith("préparation :")) {
-
-            recipe.prepTime = parseDuration(line);
-            mode = "steps";
-
             continue;
         }
-        if (lowerLine.startsWith("cuisson :")) {
 
-            recipe.cookTime = parseDuration(line);
 
-            continue;
-        }
         if (
-            lowerLine.startsWith("repos :") ||
-            lowerLine.startsWith("temps de repos :") ||
-            lowerLine.startsWith("levée :") ||
-            lowerLine.startsWith("temps de levée :")
+            lowerLine.includes("buon appetito") ||
+            lowerLine.includes("bon appétit")
         ) {
-
-            recipe.restTime = parseDuration(line);
-
             continue;
         }
+
+
+        // ----------------------------------------------
+        // Début des ingrédients
+        // ----------------------------------------------
+
+        if (
+            lowerLine === "ingrédients" ||
+            lowerLine === "ingredients"
+        ) {
+            mode = "ingredients";
+            continue;
+        }
+
+
+        // ----------------------------------------------
+        // Début de la préparation
+        // ----------------------------------------------
 
         if (
             lowerLine === "préparation" ||
-            lowerLine === "etapes" ||
+            lowerLine === "preparation" ||
             lowerLine === "étapes" ||
+            lowerLine === "etapes" ||
             lowerLine === "instructions"
         ) {
             mode = "steps";
             continue;
         }
 
+
+        // ----------------------------------------------
+        // Informations générales
+        // ----------------------------------------------
+
+        let foundGeneralInformation = false;
+
+
+        // Portions
+
+        const portionsMatch = line.match(
+            /(\d+)\s*(?:personnes?|pers\.?|portions?)/i
+        );
+
+        if (portionsMatch) {
+            recipe.portions = Number(portionsMatch[1]);
+            foundGeneralInformation = true;
+        }
+
+
+        // Préparation
+
+        if (/préparation/i.test(line)) {
+            recipe.prepTime = parseDuration(line);
+            foundGeneralInformation = true;
+        }
+
+
+        // Cuisson
+
+        if (/cuisson/i.test(line)) {
+            recipe.cookTime = parseDuration(line);
+            foundGeneralInformation = true;
+        }
+
+        // Repos
+
+        const restMatch = line.match(
+            /(?:repos|temps de repos|levée|temps de levée)\s*(?:[:\-])?\s*(\d+)\s*(?:min|minutes?|h|heures?)/i
+        );
+
+        if (restMatch) {
+
+            const restValue = Number(restMatch[1]);
+
+            if (/h|heure/i.test(restMatch[0])) {
+                recipe.restTime = restValue * 60;
+            } else {
+                recipe.restTime = restValue;
+            }
+
+            foundGeneralInformation = true;
+        }
+
+
+        if (foundGeneralInformation) {
+            continue;
+        }
+
+
+        // ----------------------------------------------
+        // Ingrédients
+        // ----------------------------------------------
+
         if (mode === "ingredients") {
-            recipe.ingredients.push(line);
-        } else {
-            recipe.steps.push(line);
+
+            let ingredient = line
+                .replace(/^[-•●▪◦]\s*/, "")
+                .trim();
+
+
+            if (!ingredient) {
+                continue;
+            }
+
+
+            // Ignore les lignes parasites
+
+            const lowerIngredient = ingredient.toLowerCase();
+
+            if (
+                lowerIngredient === "ingrédients" ||
+                lowerIngredient === "ingredients" ||
+                lowerIngredient.includes("en lire moins") ||
+                lowerIngredient.includes("en lire plus") ||
+                lowerIngredient.includes("buon appetito") ||
+                lowerIngredient.includes("bon appétit")
+            ) {
+                continue;
+            }
+
+
+            recipe.ingredients.push(ingredient);
+
+            continue;
+        }
+
+
+        // ----------------------------------------------
+        // Préparation
+        // ----------------------------------------------
+
+        if (mode === "steps") {
+
+            const step = line.trim();
+
+            if (!step) {
+                continue;
+            }
+
+
+            // Ignore les lignes parasites
+
+            const lowerStep = step.toLowerCase();
+
+            if (
+                lowerStep.includes("en lire moins") ||
+                lowerStep.includes("en lire plus") ||
+                lowerStep.includes("buon appetito") ||
+                lowerStep.includes("bon appétit")
+            ) {
+                continue;
+            }
+
+
+            recipe.steps.push(step);
         }
     }
 
 
-    console.log("🧪 RECETTE IMPORTÉE :", {
-    name: recipe.name,
-    portions: recipe.portions,
-    prepTime: recipe.prepTime,
-    cookTime: recipe.cookTime,
-    restTime: recipe.restTime,
-    ingredients: recipe.ingredients,
-    steps: recipe.steps
-});
-    
+    // --------------------------------------------------
+    // Contrôle console
+    // --------------------------------------------------
 
-    return createRecipe({
+    console.log("🧪 RECETTE IMPORTÉE :", {
         name: recipe.name,
+        category: recipe.category,
+        portions: recipe.portions,
         prepTime: recipe.prepTime,
         cookTime: recipe.cookTime,
         restTime: recipe.restTime,
-        portions: recipe.portions,
         ingredients: recipe.ingredients,
         steps: recipe.steps
     });
 
+
+    // --------------------------------------------------
+    // Retour de la recette
+    // --------------------------------------------------
+
+    return recipe;
 }

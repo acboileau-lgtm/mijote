@@ -321,10 +321,15 @@ h2 { font-size: 28px; }
 .recipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
 
-.recipe-visual { height: 125px; display: grid; place-items: center; background: #dce5d7; font-size: 50px; position: relative; }
+
 .recipe-visual.orange { background: #f0d9bd; }.recipe-visual.rose { background: #efd1ca; }.recipe-visual.yellow { background: #eae1bc; }
 .recipe-content { padding: 17px; }
-.recipe-content h3 { margin: 0; font-family: "Playfair Display", serif; font-size: 19px; }
+.recipe-content h3 {
+    margin: 0; 
+    font-family: "Playfair Display", serif; 
+    font-size: 19px;
+    min-height: 2.6em;
+ }
 .recipe-meta { margin: 8px 0 15px; color: var(--muted); font-size: 11px; }
 .tags { display: flex; gap: 5px; flex-wrap: wrap; }
 .tag { border-radius: 20px; padding: 4px 8px; background: #edf0e8; color: #536559; font-size: 9px; font-weight: 700; text-transform: uppercase; }
@@ -680,31 +685,39 @@ dialog form { position: relative; padding: 30px; }
     font-style:italic;
 }
 
+
+.recipe-card {
+    position: relative;
+}
+
 .favorite-button {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 14px;
+    right: 14px;
+    z-index: 10;
 
-    background: transparent;
+    width: 42px;
+    height: 42px;
+
     border: none;
+    background: transparent;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     font-size: 30px;
+    line-height: 1;
+
     cursor: pointer;
-
-    color: rgb(255, 255, 255);
-    opacity: .85;
-
-    transition: transform .15s;
 }
 
 .favorite-button:hover {
-    transform: scale(1.25) rotate(-10deg);
+    transform: scale(1.1);
 }
 
 .favorite-button.favorite {
-    color: #f6fb5b;
-    transform: scale(1.15);
-    text-shadow: 0 0 5px rgba(0,0,0,.25);
+    color: #f4df32;
 }
 
 
@@ -753,6 +766,42 @@ dialog form { position: relative; padding: 30px; }
 
 .recipe-card {
     min-width: 0;
+}
+.recipe-card {
+    border: 1px solid #ddd6c8;
+    border-radius: 20px;
+    padding: 18px;
+    background: #fffdf8;
+    overflow: hidden;
+    box-sizing: border-box;
+    position: relative;
+
+}
+.recipe-visual {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin-top: 35px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #dce5d7;
+    display: grid;
+    place-items: center;
+    font-size: 50px;
+}
+.recipe-visual img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+.recipe-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
 }
 
 .recipe-card.card {
@@ -882,4 +931,42 @@ dialog form { position: relative; padding: 30px; }
 [hidden] {
     display: none !important;
 }
+
+
+
+.recipe-card-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.photo-dropzone {
+    position: relative;
+}
+
+.remove-photo-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    font-size: 20px;
+    z-index: 10;
+}
+
+.remove-photo-button:hover {
+    transform: scale(1.05);
+}
+
+
+
+
 

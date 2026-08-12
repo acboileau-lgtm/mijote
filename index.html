@@ -206,27 +206,46 @@
 
                 <div class="photo-dropzone">
 
-                  <img id="recipePhotoPreview" class="recipe-photo-preview" hidden>
+                    <img
+                        id="recipePhotoPreview"
+                        class="recipe-photo-preview"
+                        hidden
+                    >
 
-                  <div id="photoPlaceholder" class="photo-placeholder">
+                    <div id="photoPlaceholder" class="photo-placeholder">
 
-                    <div class="photo-icon">📷</div>
+                        <div class="photo-icon">📷</div>
 
-                    <div class="photo-text">
-                      Cliquez pour ajouter une photo
+                        <div class="photo-text">
+                            Cliquez pour ajouter une photo
+                        </div>
+
+                        <div class="photo-subtext">
+                            JPG • PNG
+                        </div>
+
                     </div>
 
-                    <div class="photo-subtext">
-                      JPG • PNG
-                    </div>
-
-                  </div>
+                    <button
+                        type="button"
+                        id="removeRecipePhoto"
+                        class="remove-photo-button"
+                        title="Supprimer la photo"
+                        hidden
+                    >
+                        🗑️
+                    </button>
 
                 </div>
 
-                <input type="file" id="recipePhotoInput" accept="image/*" hidden>
+                <input
+                    type="file"
+                    id="recipePhotoInput"
+                    accept="image/*"
+                    hidden
+                >
 
-              </section>
+            </section>
 
 
               <div class="recipe-top-grid">

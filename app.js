@@ -134,6 +134,7 @@ const OCCASIONS = [
 
   const photoDropzone = $(".photo-dropzone");
   const recipePhotoInput = $("#recipePhotoInput");
+  const removeRecipePhoto = $("#removeRecipePhoto");
 
   photoDropzone.addEventListener("click", () => {
     recipePhotoInput.click();
@@ -175,22 +176,25 @@ startImport.addEventListener("click", async () => {
 
     const recipe = importRecipe(importRecipeText.value);
 
-      await addRecipe(recipe);
+    if (!recipe) {
+        return;
+    }
 
-      // Fermer la fenêtre d'import
-      importModal.classList.add("hidden");
+    // Ferme la fenêtre d'import
+    importModal.classList.add("hidden");
 
-      // Ouvrir directement la recette importée en mode modification
-      $("#recipeModalTitle").textContent = "Modifier la recette";
-      $("#recipeModalSubtitle").textContent = recipe.name;
-      $("#saveRecipe").textContent = "Mettre à jour";
+    // Prépare le formulaire en mode AJOUT
+    delete recipeForm.dataset.recipeId;
 
-      loadRecipe(recipe);
+    $("#recipeModalTitle").textContent = "Ajouter la recette";
+    $("#recipeModalSubtitle").textContent = recipe.name;
+    $("#saveRecipe").textContent = "Ajouter";
 
-      recipeForm.dataset.recipeId = recipe.id;
+    // Charge les informations importées dans le formulaire
+    loadRecipe(recipe);
 
-      recipeModal.classList.remove("hidden");
-
+    // Ouvre le formulaire
+    recipeModal.classList.remove("hidden");
 });
 
 
@@ -239,10 +243,12 @@ function loadRecipe(recipe) {
         recipePhotoPreview.src = currentRecipePhoto;
         recipePhotoPreview.hidden = false;
         photoPlaceholder.hidden = true;
+        removeRecipePhoto.hidden = false;
     } else {
         recipePhotoPreview.src = "";
         recipePhotoPreview.hidden = true;
         photoPlaceholder.hidden = false;
+        removeRecipePhoto.hidden = true;
     }
 
     updateTotalTime();
@@ -297,7 +303,7 @@ function previewRecipePhoto(file) {
           recipePhotoPreview.src = currentRecipePhoto;
           recipePhotoPreview.hidden = false;
           photoPlaceholder.hidden = true;
-
+          removeRecipePhoto.hidden = false;
           
       };
 
@@ -306,6 +312,22 @@ function previewRecipePhoto(file) {
 
     reader.readAsDataURL(file);
 }
+
+removeRecipePhoto.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    currentRecipePhoto = "";
+
+    recipePhotoPreview.src = "";
+    recipePhotoPreview.hidden = true;
+
+    photoPlaceholder.hidden = false;
+
+    removeRecipePhoto.hidden = true;
+
+    recipePhotoInput.value = "";
+});
+
 
 recipeForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -380,11 +402,12 @@ recipeForm.addEventListener("submit", async (event) => {
     if (index !== -1) {
         state.recipes[index] = recipe;
 
-        // Sauvegarde de la recette modifiée dans IndexedDB
         await saveRecipeToDB(recipe);
 
-        // Sauvegarde également l'état local
         save();
+
+        // Actualise immédiatement "Mes recettes"
+        renderRecipes();
     }
 
 } else {
@@ -392,7 +415,6 @@ recipeForm.addEventListener("submit", async (event) => {
     await addRecipe(recipe);
 
 }
-
  
 
   $("#recipeName").value = "";
@@ -806,59 +828,92 @@ function clearDragStyles() {
 }
 
 function renderRecipes(filter = "all", query = "") {
-console.log("🔎 CATEGORIES :", state.recipes.map(r => ({
-    id: r.id,
-    name: r.name,
-    categories: r.categories
-})));
-  const recipes = state.recipes.filter(r =>
 
-    r.name.toLowerCase().includes(query.toLowerCase()) &&
-    (filter === "all" || (filter === "veggie" && r.veggie) || (filter === "quick" && getTotalTime(r) <= 30))
-  );
-  recipes.sort((a, b) => {
-    if (a.favorite === b.favorite) return 0;
-    return a.favorite ? -1 : 1;
-  });
+    console.log("🔎 CATEGORIES :", state.recipes.map(r => ({
+        id: r.id,
+        name: r.name,
+        categories: r.categories
+    })));
 
-  $("#recipeGrid").innerHTML = recipes.length ? recipes.map(r => `
-    <article class="recipe-card">
+    const recipes = state.recipes.filter(r =>
+        r.name.toLowerCase().includes(query.toLowerCase()) &&
+        (
+            filter === "all" ||
+            (filter === "veggie" && r.veggie) ||
+            (filter === "quick" && getTotalTime(r) <= 30)
+        )
+    );
 
-    <div class="recipe-visual ${r.color === "sage" ? "" : r.color}">
+    recipes.sort((a, b) => {
+        if (a.favorite === b.favorite) return 0;
+        return a.favorite ? -1 : 1;
+    });
 
-        <button
-            class="favorite-button ${r.favorite ? "favorite" : ""}"
-            data-favorite="${r.id}"
-            title="${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}">
-            ${r.favorite ? "★" : "☆"}
-        </button>
+    $("#recipeGrid").innerHTML = recipes.length
+        ? recipes.map(r => `
+            <article class="recipe-card">
 
-        ${r.emoji}
+                <!-- ⭐ Favori : en dehors de la photo -->
+                <button
+                    class="favorite-button ${r.favorite ? "favorite" : ""}"
+                    data-favorite="${r.id}"
+                    title="${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}">
+                    ${r.favorite ? "★" : "☆"}
+                </button>
 
-    </div>
-      <div class="recipe-content">
-        <h3>${r.name}</h3>
-        <p class="recipe-meta">◷ ${getTotalTime(r)} min &nbsp;·&nbsp; ♙ ${r.portions} personnes</p>
-        <div class="tags">
-          ${(r.tags ?? []).map(t => `<span class="tag">${t}</span>`).join("")}
-        </div>
-        <div class="recipe-actions">
+                <!-- 📷 Zone visuelle -->
+                <div class="recipe-visual ${r.color === "sage" ? "" : r.color}">
 
-          <button data-plan-recipe="${r.id}">
-              Planifier
-          </button>
+                    ${
+                        r.photo
+                            ? `<img src="${r.photo}" alt="${r.name}">`
+                            : `<div class="recipe-placeholder">
+                                ${r.emoji}
+                               </div>`
+                    }
 
-          <button data-edit-recipe="${r.id}">
-              Modifier
-          </button>
+                </div>
 
-          <button data-delete-recipe="${r.id}">
-              Supprimer
-          </button>
+                <!-- 📝 Contenu de la recette -->
+                <div class="recipe-content">
 
-        </div>
-      </div>
-    </article>`).join("") : `<div class="empty-state">Aucune recette ne correspond à votre recherche.</div>`;
+                    <h3>${r.name}</h3>
+
+                    <p class="recipe-meta">
+                        ◷ ${getTotalTime(r)} min
+                        &nbsp;·&nbsp;
+                        ♙ ${r.portions} personnes
+                    </p>
+
+                    <div class="tags">
+                        ${(r.tags ?? [])
+                            .map(t => `<span class="tag">${t}</span>`)
+                            .join("")}
+                    </div>
+
+                    <div class="recipe-actions">
+
+                        <button data-plan-recipe="${r.id}">
+                            Planifier
+                        </button>
+
+                        <button data-edit-recipe="${r.id}">
+                            Modifier
+                        </button>
+
+                        <button data-delete-recipe="${r.id}">
+                            Supprimer
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </article>
+        `).join("")
+        : `<div class="empty-state">
+            Aucune recette ne correspond à votre recherche.
+          </div>`;
 }
 
 function renderShopping() {
