@@ -175,9 +175,21 @@ startImport.addEventListener("click", async () => {
 
     const recipe = importRecipe(importRecipeText.value);
 
-    await addRecipe(recipe);
+      await addRecipe(recipe);
 
-    importModal.classList.add("hidden");
+      // Fermer la fenêtre d'import
+      importModal.classList.add("hidden");
+
+      // Ouvrir directement la recette importée en mode modification
+      $("#recipeModalTitle").textContent = "Modifier la recette";
+      $("#recipeModalSubtitle").textContent = recipe.name;
+      $("#saveRecipe").textContent = "Mettre à jour";
+
+      loadRecipe(recipe);
+
+      recipeForm.dataset.recipeId = recipe.id;
+
+      recipeModal.classList.remove("hidden");
 
 });
 
