@@ -4,6 +4,7 @@
  */
 export const RECIPE_CATEGORIES = [
     { id: "meat", label: "Viande", icon: "🥩" },
+    { id: "poultry", label: "Volaille", icon: "🍗" },
     { id: "fish", label: "Poisson", icon: "🐟" },
     { id: "pasta", label: "Pâtes", icon: "🍝" },
     { id: "rice", label: "Riz", icon: "🍚" },
@@ -14,6 +15,7 @@ export const RECIPE_CATEGORIES = [
     { id: "breakfast", label: "Petit-déjeuner", icon: "🥐" },
     { id: "world", label: "Cuisine du monde", icon: "🌍" },
     { id: "drink", label: "Boisson", icon: "🍹" }
+
 ];
 
 export function getAllCategories() {

@@ -284,7 +284,47 @@
                 </section>
               </div>
 
+              <hr class="recipe-separator">
 
+              <section class="recipe-section recipe-extra-fields">
+
+                <div class="recipe-extra-grid">
+
+                  <!-- Matériel -->
+                  <section class="recipe-card card">
+
+                    <h3>🧰 Matériel</h3>
+
+                    <div id="equipmentList"></div>
+
+                    <button type="button" class="button secondary-button" id="addEquipment">
+                      + Ajouter un matériel
+                    </button>
+
+                  </section>
+
+                  <!-- Notes -->
+                  <section class="recipe-card card">
+
+                    <h3>📝 Notes ou commentaires</h3>
+
+                    <textarea id="recipeNotes" class="recipe-notes" rows="6"
+                      placeholder="Ajoutez vos remarques, astuces ou modifications personnelles..."></textarea>
+
+                  </section>
+
+                </div>
+
+                <!-- Référence -->
+                <section class="recipe-card card recipe-source-card">
+
+                  <h3>🔗 Référence / Source</h3>
+
+                  <input type="url" id="recipeSource" placeholder="https://..." autocomplete="off">
+
+                </section>
+
+              </section>
 
               <hr class="recipe-separator">
 

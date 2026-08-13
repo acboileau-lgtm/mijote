@@ -7,6 +7,15 @@ function createRecipe(data = {}) {
         // Photo
         photo: data.photo ?? "",
 
+        // Référence
+        source: data.source ?? "",
+
+        // Notes / commentaires
+        notes: data.notes ?? "",
+
+        // Matériel
+        equipment: data.equipment ?? [],
+
         // Classement
         category: data.category ?? "Plat",
         categories: data.categories ?? [],

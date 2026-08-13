@@ -1964,3 +1964,101 @@ dialog form {
     background: #3f5f4c;
     color: white;
 }
+
+.recipe-badges {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+    padding-right: 18px;
+}
+
+.recipe-category-badge,
+.favorite-button {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+}
+
+.recipe-category-badge {
+    display: grid;
+    place-items: center;
+    font-size: 24px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.favorite-button {
+    display: grid;
+    place-items: center;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.recipe-extra-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.recipe-extra-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.recipe-extra-grid .recipe-card,
+.recipe-source-card {
+    padding: 24px;
+}
+
+.recipe-extra-grid h3,
+.recipe-source-card h3 {
+    margin-top: 0;
+}
+
+.recipe-notes {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.recipe-source-card input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#equipmentList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.equipment-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.equipment-row input {
+    flex: 1;
+}
+
+.equipment-row button {
+    flex-shrink: 0;
+}
+
+@media (max-width: 800px) {
+
+    .recipe-extra-grid {
+        grid-template-columns: 1fr;
+    }
+}

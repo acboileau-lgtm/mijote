@@ -220,27 +220,247 @@ cancelImport.addEventListener("click", () => {
 
 startImport.addEventListener("click", async () => {
 
-  const recipe = importRecipe(importRecipeText.value);
+  // ==================================================
+  // MODE TEXTE
+  // ==================================================
 
-  if (!recipe) {
+  if (!importTextSection.classList.contains("hidden")) {
+
+    const recipe = importRecipe(
+      importRecipeText.value
+    );
+
+    if (!recipe) {
+      return;
+    }
+
+    // Ferme la fenêtre d'import
+    importModal.classList.add("hidden");
+
+    // Prépare le formulaire en mode AJOUT
+    delete recipeForm.dataset.recipeId;
+
+    $("#recipeModalTitle").textContent =
+      "Ajouter la recette";
+
+    $("#recipeModalSubtitle").textContent =
+      recipe.name;
+
+    $("#saveRecipe").textContent =
+      "Ajouter";
+
+    // Charge les données importées
+    loadRecipe(recipe);
+
+    // Ouvre le formulaire
+    recipeModal.classList.remove("hidden");
+
     return;
   }
 
-  // Ferme la fenêtre d'import
-  importModal.classList.add("hidden");
 
-  // Prépare le formulaire en mode AJOUT
-  delete recipeForm.dataset.recipeId;
+  // ==================================================
+  // MODE LIEN
+  // ==================================================
 
-  $("#recipeModalTitle").textContent = "Ajouter la recette";
-  $("#recipeModalSubtitle").textContent = recipe.name;
-  $("#saveRecipe").textContent = "Ajouter";
+  const url =
+    importRecipeUrl.value.trim();
 
-  // Charge les informations importées dans le formulaire
-  loadRecipe(recipe);
+  if (!url) {
 
-  // Ouvre le formulaire
-  recipeModal.classList.remove("hidden");
+    alert(
+      "Veuillez saisir le lien d'une recette."
+    );
+
+    importRecipeUrl.focus();
+
+    return;
+  }
+
+
+  // Vérification simple de l'URL
+  try {
+
+    new URL(url);
+
+  } catch {
+
+    alert(
+      "Le lien saisi n'est pas valide."
+    );
+
+    importRecipeUrl.focus();
+
+    return;
+  }
+
+
+  // --------------------------------------------------
+  // Désactive temporairement le bouton
+  // --------------------------------------------------
+
+  startImport.disabled = true;
+  startImport.textContent =
+    "Import en cours…";
+
+
+  try {
+
+    console.log(
+      "🌐 Import depuis le lien :",
+      url
+    );
+
+
+    const response =
+      await fetch(
+        `http://localhost:3000/api/import-url?url=${encodeURIComponent(url)}`
+      );
+
+
+    const data =
+      await response.json();
+
+
+    // ------------------------------------------------
+    // Erreur renvoyée par le serveur
+    // ------------------------------------------------
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error ||
+        "Impossible d'importer cette recette."
+      );
+    }
+
+
+    console.log(
+      "✅ Recette récupérée depuis le lien :",
+      data
+    );
+
+
+    // ------------------------------------------------
+    // Transformation en recette Mijoté
+    // ------------------------------------------------
+
+    const recipe =
+      createRecipe({
+
+        name:
+          data.name || "",
+
+        photo:
+          data.image || "",
+
+        prepTime:
+          Number(
+            data.prepTime || 0
+          ),
+
+        cookTime:
+          Number(
+            data.cookTime || 0
+          ),
+
+        restTime: 0,
+
+        portions:
+          Number(
+            data.portions || 0
+          ),
+
+        ingredients:
+          Array.isArray(
+            data.ingredients
+          )
+            ? data.ingredients
+            : [],
+
+        steps:
+          Array.isArray(
+            data.steps
+          )
+            ? data.steps
+            : [],
+
+        categories:
+          data.category
+            ? [data.category]
+            : [],
+
+        notes:
+          data.notes || "",
+
+        equipment: [],
+
+        occasion: [],
+
+        source:
+          data.source || {
+            type: "url",
+            value: url
+          }
+      });
+
+
+    // ------------------------------------------------
+    // Ferme la fenêtre d'import
+    // ------------------------------------------------
+
+    importModal.classList.add("hidden");
+
+
+    // ------------------------------------------------
+    // Prépare le formulaire en mode AJOUT
+    // ------------------------------------------------
+
+    delete recipeForm.dataset.recipeId;
+
+    $("#recipeModalTitle").textContent =
+      "Ajouter la recette";
+
+    $("#recipeModalSubtitle").textContent =
+      recipe.name;
+
+    $("#saveRecipe").textContent =
+      "Ajouter";
+
+
+    // ------------------------------------------------
+    // Charge la recette importée
+    // ------------------------------------------------
+
+    loadRecipe(recipe);
+
+
+    // ------------------------------------------------
+    // Ouvre le formulaire
+    // ------------------------------------------------
+
+    recipeModal.classList.remove("hidden");
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ Erreur import lien :",
+      error
+    );
+
+    alert(
+      `Impossible d'importer la recette.\n\n${error.message}`
+    );
+
+
+  } finally {
+
+    startImport.disabled = false;
+
+    startImport.textContent =
+      "Importer";
+  }
 });
 
 
@@ -267,6 +487,35 @@ function loadRecipe(recipe) {
     $("#recipeCategories"),
     recipe.categories ?? []
   );
+
+  // ==========================================
+  // Chargement de la référence
+  // ==========================================
+
+  $("#recipeSource").value =
+    typeof recipe.source === "string"
+      ? recipe.source
+      : (recipe.source?.value ?? "");
+
+
+  // ==========================================
+  // Chargement des notes
+  // ==========================================
+
+  $("#recipeNotes").value = recipe.notes ?? "";
+
+
+  // ==========================================
+  // Chargement du matériel
+  // ==========================================
+
+  equipmentList.innerHTML = "";
+
+  (recipe.equipment ?? []).forEach(item => {
+    addEquipmentLine(item);
+  });
+
+
 
   // Chargement des ingrédients
   ingredientsList.innerHTML = "";
@@ -379,22 +628,38 @@ recipeForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const name = $("#recipeName").value.trim();
+
   if (!name) {
     alert("Le nom de la recette est obligatoire.");
     $("#recipeName").focus();
     return;
   }
 
-  const emoji = $("#recipeEmoji").value.trim() || "👨‍🍳";
-  const prepTime = Number($("#recipePrepTime").value);
-  const cookTime = Number($("#recipeCookTime").value);
-  const restTime = Number($("#recipeRestTime").value);
-  const portions = Number($("#recipePortions").value);
+  const emoji =
+    $("#recipeEmoji").value.trim() || "👨‍🍳";
 
-  if (prepTime < 0 || cookTime < 0 || restTime < 0) {
+  const prepTime =
+    Number($("#recipePrepTime").value);
+
+  const cookTime =
+    Number($("#recipeCookTime").value);
+
+  const restTime =
+    Number($("#recipeRestTime").value);
+
+  const portions =
+    Number($("#recipePortions").value);
+
+
+  if (
+    prepTime < 0 ||
+    cookTime < 0 ||
+    restTime < 0
+  ) {
     alert("Les temps ne peuvent pas être négatifs.");
     return;
   }
+
 
   if (portions < 1) {
     alert("Le nombre de portions doit être supérieur à 0.");
@@ -403,30 +668,88 @@ recipeForm.addEventListener("submit", async (event) => {
   }
 
 
-  const ingredients = [...$$(".ingredient-input")]
-    .map(input => input.value.trim())
-    .filter(value => value !== "");
+  // ==========================================
+  // Ingrédients
+  // ==========================================
 
-  const steps = [...$$(".step-input")]
-    .map(input => input.value.trim())
-    .filter(value => value !== "");
+  const ingredients =
+    [...$$(".ingredient-input")]
+      .map(input => input.value.trim())
+      .filter(value => value !== "");
 
-  const recipeId = recipeForm.dataset.recipeId;
+
+  // ==========================================
+  // Étapes
+  // ==========================================
+
+  const steps =
+    [...$$(".step-input")]
+      .map(input => input.value.trim())
+      .filter(value => value !== "");
+
+
+  // ==========================================
+  // Catégories
+  // ==========================================
 
   const categories = [
     ...$$('#recipeCategories .chip[aria-pressed="true"]')
-  ].map(chip => chip.dataset.categoryId);
+  ].map(
+    chip => chip.dataset.categoryId
+  );
 
+
+  // ==========================================
+  // Matériel
+  // ==========================================
+
+  const equipment =
+    [...$$(".equipment-row input")]
+      .map(input => input.value.trim())
+      .filter(value => value !== "");
+
+
+  // ==========================================
+  // Notes
+  // ==========================================
+
+  const notes =
+    $("#recipeNotes").value.trim();
+
+
+  // ==========================================
+  // Référence / Source
+  // ==========================================
+
+  const source =
+    $("#recipeSource").value.trim();
+
+
+  // ==========================================
+  // ID recette
+  // ==========================================
+
+  const recipeId =
+    recipeForm.dataset.recipeId;
+
+
+  // ==========================================
+  // Création de la recette
+  // ==========================================
 
   const recipe = createRecipe({
 
-    id: recipeId || undefined,
+    id:
+      recipeId || undefined,
 
     name,
+
     emoji,
 
     prepTime,
+
     cookTime,
+
     restTime,
 
     portions,
@@ -434,44 +757,84 @@ recipeForm.addEventListener("submit", async (event) => {
     categories,
 
     ingredients,
+
     steps,
 
-    photo: currentRecipePhoto
+    photo:
+      currentRecipePhoto,
 
+    equipment,
+
+    notes,
+
+    source
   });
 
 
+  // ==========================================
+  // Mise à jour
+  // ==========================================
+
   if (recipeId) {
 
-    const index = state.recipes.findIndex(r => r.id == recipeId);
+    const index =
+      state.recipes.findIndex(
+        r => r.id == recipeId
+      );
 
     if (index !== -1) {
-      state.recipes[index] = recipe;
 
-      await saveRecipeToDB(recipe);
+      state.recipes[index] =
+        recipe;
+
+      await saveRecipeToDB(
+        recipe
+      );
 
       save();
 
-      // Actualise immédiatement "Mes recettes"
+      // Actualise immédiatement
+      // "Mes recettes"
       renderRecipes();
     }
 
   } else {
 
-    await addRecipe(recipe);
-
+    await addRecipe(
+      recipe
+    );
   }
 
 
+  // ==========================================
+  // Réinitialisation du formulaire
+  // ==========================================
+
   $("#recipeName").value = "";
+
   $("#recipeEmoji").value = "";
+
   $("#recipePrepTime").value = 20;
+
   $("#recipeCookTime").value = 30;
+
   $("#recipeRestTime").value = 0;
+
   $("#recipePortions").value = 4;
 
-  recipeModal.classList.add("hidden");
+  $("#recipeNotes").value = "";
+
+  $("#recipeSource").value = "";
+
+  equipmentList.innerHTML = "";
+
+
+  // Ferme la fenêtre
+  recipeModal.classList.add(
+    "hidden"
+  );
 });
+
 
 openRecipeModal.addEventListener("click", () => {
 
@@ -602,6 +965,55 @@ function addStepLine(value = "") {
   textarea.addEventListener("paste", handleStepPaste);
   textarea.focus();
 }
+
+function addEquipmentLine(value = "") {
+
+  const row = document.createElement("div");
+
+  row.className = "equipment-row";
+
+  row.innerHTML = `
+    <input
+      type="text"
+      value="${value.replace(/"/g, "&quot;")}"
+      placeholder="Ex. Four, Air Fryer, Monsieur Cuisine..."
+    >
+
+    <button
+      type="button"
+      class="button secondary-button"
+      aria-label="Supprimer ce matériel">
+      🗑
+    </button>
+  `;
+
+
+  const input =
+    row.querySelector("input");
+
+  const deleteButton =
+    row.querySelector("button");
+
+
+  deleteButton.addEventListener(
+    "click",
+    () => {
+      row.remove();
+    }
+  );
+
+
+  equipmentList.appendChild(row);
+}
+
+$("#addEquipment").addEventListener(
+  "click",
+  () => {
+    addEquipmentLine();
+  }
+);
+
+
 
 function handleIngredientPaste(event) {
 
@@ -900,12 +1312,22 @@ function renderRecipes(filter = "all", query = "") {
             <article class="recipe-card">
 
                 <!-- ⭐ Favori : en dehors de la photo -->
-                <button
-                    class="favorite-button ${r.favorite ? "favorite" : ""}"
-                    data-favorite="${r.id}"
-                    title="${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}">
-                    ${r.favorite ? "★" : "☆"}
-                </button>
+                <div class="recipe-badges">
+
+    <span
+        class="recipe-category-badge"
+        title="${r.categories?.[0] ? getCategoryLabel(r.categories[0]) : ""}">
+        ${r.categories?.[0] ? getCategoryIcon(r.categories[0]) : ""}
+    </span>
+
+    <button
+        class="favorite-button ${r.favorite ? "favorite" : ""}"
+        data-favorite="${r.id}"
+        title="${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}">
+        ${r.favorite ? "★" : "☆"}
+    </button>
+
+</div>
 
                 <!-- 📷 Zone visuelle -->
                 <div class="recipe-visual ${r.color === "sage" ? "" : r.color}">

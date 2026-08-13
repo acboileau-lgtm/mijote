@@ -1,0 +1,26 @@
+{
+  "name": "mijote",
+  "version": "1.0.0",
+  "description": "Prototype d’application pour organiser les repas de la semaine.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acboileau-lgtm/mijote.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/acboileau-lgtm/mijote/issues"
+  },
+  "homepage": "https://github.com/acboileau-lgtm/mijote#readme",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2"
+  }
+}
