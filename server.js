@@ -15,7 +15,8 @@ app.use((req, res, next) => {
 
     const allowedOrigins = [
         "http://127.0.0.1:5500",
-        "http://localhost:5500"
+        "http://localhost:5500",
+        "https://acboileau-lgtm.github.io"
     ];
 
     const origin = req.headers.origin;
