@@ -314,8 +314,9 @@ startImport.addEventListener("click", async () => {
 
     const response =
       await fetch(
-        `http://localhost:3000/api/import-url?url=${encodeURIComponent(url)}`
+        `https://mijote-api.onrender.com/api/import-url?url=${encodeURIComponent(url)}`
       );
+
 
 
     const data =
