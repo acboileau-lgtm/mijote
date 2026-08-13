@@ -206,46 +206,32 @@
 
                 <div class="photo-dropzone">
 
-                    <img
-                        id="recipePhotoPreview"
-                        class="recipe-photo-preview"
-                        hidden
-                    >
+                  <img id="recipePhotoPreview" class="recipe-photo-preview" hidden>
 
-                    <div id="photoPlaceholder" class="photo-placeholder">
+                  <div id="photoPlaceholder" class="photo-placeholder">
 
-                        <div class="photo-icon">📷</div>
+                    <div class="photo-icon">📷</div>
 
-                        <div class="photo-text">
-                            Cliquez pour ajouter une photo
-                        </div>
-
-                        <div class="photo-subtext">
-                            JPG • PNG
-                        </div>
-
+                    <div class="photo-text">
+                      Cliquez pour ajouter une photo
                     </div>
 
-                    <button
-                        type="button"
-                        id="removeRecipePhoto"
-                        class="remove-photo-button"
-                        title="Supprimer la photo"
-                        hidden
-                    >
-                        🗑️
-                    </button>
+                    <div class="photo-subtext">
+                      JPG • PNG
+                    </div>
+
+                  </div>
+
+                  <button type="button" id="removeRecipePhoto" class="remove-photo-button" title="Supprimer la photo"
+                    hidden>
+                    🗑️
+                  </button>
 
                 </div>
 
-                <input
-                    type="file"
-                    id="recipePhotoInput"
-                    accept="image/*"
-                    hidden
-                >
+                <input type="file" id="recipePhotoInput" accept="image/*" hidden>
 
-            </section>
+              </section>
 
 
               <div class="recipe-top-grid">
@@ -350,12 +336,58 @@
 
           <h2>📥 Importer une recette</h2>
 
-          <p>
-            Collez ici le texte d'une recette.
-          </p>
+          <!-- Choix du mode d'import -->
+          <div class="import-mode-switch">
 
-          <textarea id="importRecipeText" rows="15" placeholder="Collez ici votre recette..." autofocus></textarea>
+            <button type="button" id="importTextMode" class="import-mode-button active">
+              📋 Texte
+            </button>
 
+            <button type="button" id="importLinkMode" class="import-mode-button">
+              🔗 Lien
+            </button>
+
+          </div>
+
+
+          <!-- ============================== -->
+          <!-- IMPORT PAR TEXTE -->
+          <!-- ============================== -->
+
+          <div id="importTextSection">
+
+            <p>
+              Collez ici le texte d'une recette.
+            </p>
+
+            <textarea id="importRecipeText" rows="15" placeholder="Collez ici votre recette..." autofocus></textarea>
+
+          </div>
+
+
+          <!-- ============================== -->
+          <!-- IMPORT PAR LIEN -->
+          <!-- ============================== -->
+
+          <div id="importLinkSection" class="hidden">
+
+            <p>
+              Collez ici le lien de la recette.
+            </p>
+
+            <input type="url" id="importRecipeUrl" placeholder="https://www.exemple.com/recette..." autocomplete="off">
+
+            <p class="import-link-help">
+              Mijoté essaiera de récupérer automatiquement
+              les informations disponibles sur la page.
+            </p>
+
+          </div>
+
+
+          <!-- ============================== -->
+          <!-- ACTIONS -->
+          <!-- ============================== -->
 
           <div class="modal-actions">
 
