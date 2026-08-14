@@ -483,6 +483,7 @@ function loadRecipe(recipe) {
   $("#recipeRestTime").value = recipe.restTime;
 
   $("#recipePortions").value = recipe.portions;
+  $("#recipeVeggie").checked = recipe.veggie ?? false;
 
   renderCategoryChips(
     $("#recipeCategories"),
@@ -651,6 +652,8 @@ recipeForm.addEventListener("submit", async (event) => {
   const portions =
     Number($("#recipePortions").value);
 
+  const veggie =
+    $("#recipeVeggie").checked;
 
   if (
     prepTime < 0 ||
@@ -755,6 +758,8 @@ recipeForm.addEventListener("submit", async (event) => {
 
     portions,
 
+    veggie,
+
     categories,
 
     ingredients,
@@ -823,6 +828,8 @@ recipeForm.addEventListener("submit", async (event) => {
 
   $("#recipePortions").value = 4;
 
+  $("#recipeVeggie").checked = false;
+
   $("#recipeNotes").value = "";
 
   $("#recipeSource").value = "";
@@ -850,6 +857,7 @@ openRecipeModal.addEventListener("click", () => {
   $("#recipeCookTime").value = 30;
   $("#recipeRestTime").value = 0;
   $("#recipePortions").value = 4;
+  $("#recipeVeggie").checked = false;
 
 
   // Affiche les catégories
@@ -1173,24 +1181,50 @@ function updateTodayDate() {
   const lunchKey = `${todayIndex}-lunch`;
   const dinnerKey = `${todayIndex}-dinner`;
 
-  const lunchRecipe = state.recipes.find(
-    r => r.id === state.meals[lunchKey]
-  );
+  const lunchMeal = state.meals[lunchKey];
+  const dinnerMeal = state.meals[dinnerKey];
 
-  const dinnerRecipe = state.recipes.find(
-    r => r.id === state.meals[dinnerKey]
-  );
+  const getTodayMeal = (meal) => {
+    if (!meal) return null;
+
+    // Recette
+    if (meal.type === "recipe") {
+      return state.recipes.find(r => r.id === meal.recipeId) || null;
+    }
+
+    // Repas libre ou occasion
+    return meal;
+  };
+
+  const lunchRecipe = getTodayMeal(lunchMeal);
+  const dinnerRecipe = getTodayMeal(dinnerMeal);
+
+  console.log("🍽️ LUNCH DU JOUR :", lunchMeal);
+  console.log("🌙 DINNER DU JOUR :", dinnerMeal);
 
   $("#todayMeals").innerHTML = `
     <div class="today-meal">
       <h3>🌞 Déjeuner</h3>
       ${lunchRecipe
       ? `
-            <div class="meal-card ${lunchRecipe.color}">
+      <div class="meal-card ${getMealColorClass(lunchRecipe)}">
+          ${lunchRecipe.photo
+        ? `<img src="${lunchRecipe.photo}" class="today-meal-photo" alt="">`
+        : ""
+      }
+
+          <div class="today-meal-info">
               <strong>${lunchRecipe.name}</strong>
-              <small>${lunchRecipe.emoji} ${getTotalTime(lunchRecipe)} min · ${lunchRecipe.portions} pers.</small>
-            </div>
-          `
+
+              ${lunchRecipe.type === "free"
+        ? `<small>🥫 Repas libre</small>`
+        : lunchRecipe.type === "occasion"
+          ? `<small>🏠 Occasion</small>`
+          : `<small>${lunchRecipe.emoji || "👨‍🍳"} ${getTotalTime(lunchRecipe)} min · ${lunchRecipe.portions} pers.</small>`
+      }
+          </div>
+      </div>
+  `
       : "<p>Aucun repas prévu</p>"
     }
     </div>
@@ -1199,11 +1233,24 @@ function updateTodayDate() {
       <h3>🌙 Dîner</h3>
       ${dinnerRecipe
       ? `
-            <div class="meal-card ${dinnerRecipe.color}">
+      <div class="meal-card ${getMealColorClass(dinnerRecipe)}">
+          ${dinnerRecipe.photo
+        ? `<img src="${dinnerRecipe.photo}" class="today-meal-photo" alt="">`
+        : ""
+      }
+
+          <div class="today-meal-info">
               <strong>${dinnerRecipe.name}</strong>
-              <small>${dinnerRecipe.emoji} ${getTotalTime(dinnerRecipe)} min · ${dinnerRecipe.portions} pers.</small>
-            </div>
-          `
+
+              ${dinnerRecipe.type === "free"
+        ? `<small>🥫 Repas libre</small>`
+        : dinnerRecipe.type === "occasion"
+          ? `<small>🏠 Occasion</small>`
+          : `<small>${dinnerRecipe.emoji || "👨‍🍳"} ${getTotalTime(dinnerRecipe)} min · ${dinnerRecipe.portions} pers.</small>`
+      }
+          </div>
+      </div>
+  `
       : "<p>Aucun repas prévu</p>"
     }
     </div>
@@ -1213,59 +1260,155 @@ function updateTodayDate() {
 function renderSlot(day, slot) {
   const key = `${day}-${slot}`;
 
-  const recipe = state.recipes.find(
-    r => String(r.id) === String(state.meals[key])
-  );
-  return `<div class="meal-slot ${slot}" data-drop-meal="${key}">
-  <div class="slot-label">
-    ${slotNames[slot]}
-    <span>${slot === "lunch" ? "☀" : "☾"}</span>
-  </div>
+  const planned = state.meals[key];
 
-  ${recipe
-      ? `
-        <button
-          class="remove-meal"
-          data-remove-meal="${key}"
-          aria-label="Retirer"
-        >×</button>
-
-       ${renderMealCard(recipe, key)}
-      `
-      : `
-        <button
-          class="add-meal"
-          data-add-meal="${key}"
-          aria-label="Ajouter un repas"
-        >＋</button>
-      `
-    }
-</div>`;
-
-}
-
-function renderMealCard(recipe, key) {
-  if (!recipe) {
-    return `<p>Aucun repas prévu</p>`;
-  }
   return `
-  <div
-    class="meal-card ${recipe.color == "sage" ? "" : recipe.color}"
-    draggable="true"
-    data-drag-meal="${key}"
-    data-open-recipe="${recipe.id}"
-  >
-    <strong>${recipe.name}</strong>
-    <small>
-        ${recipe.emoji}
-        ${getTotalTime(recipe)} min ·
-        ${recipe.portions} pers.
-    </small>
-</div>
-`;
+    <div class="meal-slot ${slot}" data-drop-meal="${key}">
+      <div class="slot-label">
+        ${slotNames[slot]}
+        <span>${slot === "lunch" ? "☀" : "☾"}</span>
+      </div>
 
+      ${planned
+      ? `
+            <button
+              class="remove-meal"
+              data-remove-meal="${key}"
+              aria-label="Retirer"
+            >×</button>
+
+            ${renderMealCard(planned, key)}
+          `
+      : `
+            <button
+              class="add-meal"
+              data-add-meal="${key}"
+              aria-label="Ajouter un repas"
+            >＋</button>
+          `
+    }
+    </div>
+  `;
 }
 
+function renderMealCard(planned, key) {
+
+  // Ancien format : ID directement stocké dans state.meals
+  // On le conserve temporairement pour éviter de casser les anciennes données.
+  if (typeof planned !== "object") {
+    const recipe = state.recipes.find(
+      r => String(r.id) === String(planned)
+    );
+
+    if (!recipe) {
+      return `<p>Repas introuvable</p>`;
+    }
+
+    return `
+      <div
+        class="meal-card ${recipe.veggie
+        ? "sage"
+        : getTotalTime(recipe) <= 30
+          ? "orange"
+          : ""
+      }"
+        draggable="true"
+        data-drag-meal="${key}"
+        data-open-recipe="${recipe.id}"
+      >
+        <strong>${recipe.name}</strong>
+        <small>
+          ${recipe.emoji}
+          ${getTotalTime(recipe)} min ·
+          ${recipe.portions} pers.
+        </small>
+      </div>
+    `;
+  }
+
+  // 🍲 RECETTE
+  if (planned.type === "recipe") {
+
+    const recipe = state.recipes.find(
+      r => String(r.id) === String(planned.recipeId)
+    );
+
+    if (!recipe) {
+      return `<p>Recette introuvable</p>`;
+    }
+
+    return `
+      <div
+        class="meal-card ${recipe.veggie
+        ? "sage"
+        : getTotalTime(recipe) <= 30
+          ? "orange"
+          : ""
+      }"
+        draggable="true"
+        data-drag-meal="${key}"
+        data-open-recipe="${recipe.id}"
+      >
+        <strong>${recipe.name}</strong>
+        <small>
+          ${recipe.emoji}
+          ${getTotalTime(recipe)} min ·
+          ${recipe.portions} pers.
+        </small>
+      </div>
+    `;
+  }
+
+  // 🥫 REPAS LIBRE
+  if (planned.type === "free") {
+
+    return `
+      <div
+        class="meal-card free"
+        draggable="true"
+        data-drag-meal="${key}"
+      >
+        <strong>${planned.name}</strong>
+        <small>🥫 Repas libre</small>
+      </div>
+    `;
+  }
+
+  // 🏠 OCCASION
+  if (planned.type === "occasion") {
+
+    return `
+      <div
+        class="meal-card occasion"
+        draggable="true"
+        data-drag-meal="${key}"
+      >
+        <strong>${planned.name}</strong>
+        <small>🏠 Occasion</small>
+      </div>
+    `;
+  }
+
+  return `<p>Repas inconnu</p>`;
+}
+
+function getMealColorClass(meal) {
+
+  if (!meal) return "";
+
+  // Repas libre
+  if (meal.type === "free") {
+    return "free";
+  }
+
+  // Occasion
+  if (meal.type === "occasion") {
+    return "occasion";
+  }
+
+  // Recette
+  return meal.color || "";
+}
 
 function moveMeal(sourceKey, targetKey) {
   if (!sourceKey || !targetKey || sourceKey === targetKey || !state.meals[sourceKey]) return;
@@ -1496,8 +1639,73 @@ function openModal(type, payload = {}) {
     renderCategoryChips($("#recipeCategories"));
 
   } else if (type === "meal") {
-    eyebrow.textContent = "PLANIFIER UN REPAS"; title.textContent = "Choisir une recette";
-    fields.innerHTML = `<div class="field"><label>Recette</label><select name="recipe">${state.recipes.map(r => `<option value="${r.id}" ${r.id === payload.recipeId ? "selected" : ""}>${r.name} · ${getTotalTime(r)} min</option>`).join("")}</select></div>`;
+    eyebrow.textContent = "AJOUTER AU MENU";
+    title.textContent = "Que souhaitez-vous prévoir ?";
+
+    fields.innerHTML = `
+        <div class="field">
+            <label>Type</label>
+            <select name="mealType" id="mealType" required>
+                <option value="recipe">🍲 Une recette</option>
+                <option value="free">🥫 Un repas libre</option>
+                <option value="occasion">🏠 Une occasion</option>
+            </select>
+        </div>
+
+        <div id="mealRecipeField" class="field">
+            <label>Recette</label>
+            <select name="recipe">
+                ${state.recipes.map(r => `
+                    <option value="${r.id}">
+                        ${r.name} · ${getTotalTime(r)} min
+                    </option>
+                `).join("")}
+            </select>
+        </div>
+
+        <div id="mealTextField" class="field hidden">
+            <label id="mealTextLabel">Nom</label>
+            <input
+                type="text"
+                name="mealName"
+                placeholder="Ex. Cassoulet"
+            >
+        </div>
+
+        <div id="mealPhotoField" class="field hidden">
+            <label>Photo <span class="optional">(facultative)</span></label>
+            <input
+                type="file"
+                name="mealPhoto"
+                accept="image/*"
+            >
+        </div>
+    `;
+
+    const mealType = fields.querySelector("#mealType");
+    const mealRecipeField = fields.querySelector("#mealRecipeField");
+    const mealTextField = fields.querySelector("#mealTextField");
+    const mealPhotoField = fields.querySelector("#mealPhotoField");
+    const mealTextLabel = fields.querySelector("#mealTextLabel");
+    const mealName = fields.querySelector('[name="mealName"]');
+
+    mealType.addEventListener("change", () => {
+      const isRecipe = mealType.value === "recipe";
+
+      mealRecipeField.classList.toggle("hidden", !isRecipe);
+      mealTextField.classList.toggle("hidden", isRecipe);
+      mealPhotoField.classList.toggle("hidden", isRecipe);
+
+      if (mealType.value === "free") {
+        mealTextLabel.textContent = "Nom du repas";
+        mealName.placeholder = "Ex. Cassoulet";
+      }
+
+      if (mealType.value === "occasion") {
+        mealTextLabel.textContent = "Nom de l'occasion";
+        mealName.placeholder = "Ex. Repas chez les frangins";
+      }
+    });
   }
   else if (type === "plan") {
 
@@ -1640,7 +1848,18 @@ function openModal(type, payload = {}) {
   modal.showModal();
 }
 
-$("#modalForm").addEventListener("submit", e => {
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+
+    reader.readAsDataURL(file);
+  });
+}
+
+$("#modalForm").addEventListener("submit", async e => {
   if (e.submitter?.value === "cancel") return;
   e.preventDefault();
   const form = e.currentTarget, data = Object.fromEntries(new FormData(form));
@@ -1706,10 +1925,39 @@ $("#modalForm").addEventListener("submit", e => {
     });
 
     renderRecipes(); showToast("Recette ajoutée à votre carnet");
+
   } else if (type === "meal") {
-    state.meals[payload.key] = data.recipe;
+
+    const mealType = data.mealType;
+
+    if (mealType === "recipe") {
+
+      state.meals[payload.key] = {
+        type: "recipe",
+        recipeId: data.recipe
+      };
+
+      showToast("Recette ajoutée à la semaine");
+
+    } else {
+      const photoFile = data.mealPhoto;
+
+      state.meals[payload.key] = {
+        type: mealType,
+        name: data.mealName.trim(),
+        photo: photoFile instanceof File && photoFile.size > 0
+          ? await fileToDataUrl(photoFile)
+          : ""
+      };
+
+      showToast(
+        mealType === "occasion"
+          ? "Occasion ajoutée à la semaine"
+          : "Repas ajouté à la semaine"
+      );
+    }
+
     renderWeek();
-    showToast("Repas ajouté à la semaine");
 
   } else if (type === "complete-week") {
 
