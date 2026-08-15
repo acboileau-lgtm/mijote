@@ -1684,6 +1684,7 @@ function renderCategoryChips(container, selectedCategories = []) {
 }
 
 function openModal(type, payload = {}) {
+
   const modal = $("#modal");
   const title = $("#modalTitle");
   const eyebrow = $("#modalEyebrow");
@@ -1691,6 +1692,9 @@ function openModal(type, payload = {}) {
   const form = $("#modalForm");
   const cancelButton = $(".modal-actions .secondary-button", form);
   const submitButton = $("#modalSubmit");
+
+  submitButton.type = "submit";
+  submitButton.dataset.editRecipeFromDetail = "";
   form.dataset.type = type;
   form.dataset.payload = JSON.stringify(payload);
   cancelButton.textContent = "Annuler";
@@ -1897,7 +1901,7 @@ function openModal(type, payload = {}) {
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
       <div class="field"><label>À consommer dans</label><input name="expiry" value="7 jours"></div></div>`;
   } else if (type === "recipe-details") {
-    const recipe = state.recipes.find(r => r.id === payload.recipeId);
+    const recipe = state.recipes.find(r => r.id == payload.recipeId);
 
     console.log("🔎 RECETTE FICHE :", {
       name: recipe?.name,
@@ -1906,29 +1910,48 @@ function openModal(type, payload = {}) {
     });
 
     if (!recipe) return;
+
     eyebrow.textContent = "FICHE RECETTE";
     title.textContent = `${recipe.emoji} ${recipe.name}`;
+
     cancelButton.textContent = "Fermer";
-    submitButton.hidden = true;
+
+    submitButton.hidden = false;
+    submitButton.textContent = "✏️ Modifier";
+    submitButton.type = "button";
+    submitButton.dataset.editRecipeFromDetail = recipe.id;
+
     fields.innerHTML = `
       <div class="recipe-detail-meta">
         <span>◷ ${getTotalTime(recipe)} min</span>
         <span>♙ ${recipe.portions} personnes</span>
         ${recipe.veggie ? "<span>☘ Végétarien</span>" : ""}
       </div>
-      <div class="tags recipe-detail-tags">${recipe.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+
+      <div class="tags recipe-detail-tags">
+        ${(recipe.tags || [])
+        .map(t => `<span class="tag">${t}</span>`)
+        .join("")}
+      </div>
+
       <section class="recipe-detail-section">
         <h3>Ingrédients</h3>
         ${recipe.ingredients?.length
         ? `<ul>${recipe.ingredients.map(item => `<li>${item}</li>`).join("")}</ul>`
-        : `<p>Les ingrédients détaillés pourront être ajoutés lors de la modification de cette recette.</p>`}
+        : `<p>Les ingrédients détaillés pourront être ajoutés lors de la modification de cette recette.</p>`
+      }
       </section>
+
       <section class="recipe-detail-section">
         <h3>Préparation</h3>
         ${recipe.steps?.length
         ? `<ol>${recipe.steps.map(step => `<li>${step}</li>`).join("")}</ol>`
-        : `<p>La préparation détaillée n’a pas encore été renseignée.</p>`}
-      </section>`;
+        : `<p>La préparation détaillée n’a pas encore été renseignée.</p>`
+      }
+      </section>
+
+      
+    `;
   }
   const slotSelect = fields.querySelector('select[name="slot"]');
 
@@ -2103,6 +2126,18 @@ $("#modalForm").addEventListener("submit", async e => {
 
 document.addEventListener("click", async (e) => {
   const nav = e.target.closest("[data-view], [data-view-link]");
+  // Ouvrir la fiche recette depuis le planning
+  const openRecipe = e.target.closest("[data-open-recipe]");
+
+  if (openRecipe) {
+    const recipeId = openRecipe.dataset.openRecipe;
+
+    openModal("recipe-details", {
+      recipeId: recipeId
+    });
+
+    return;
+  }
   if (nav) navigate(nav.dataset.view || nav.dataset.viewLink);
   const addMeal = e.target.closest("[data-add-meal]");
   if (addMeal) openModal("meal", { key: addMeal.dataset.addMeal });
@@ -2154,6 +2189,46 @@ document.addEventListener("click", async (e) => {
 
     return;
   }
+
+  const editRecipeFromDetail = e.target.closest("[data-edit-recipe-from-detail]");
+
+  if (editRecipeFromDetail) {
+    const id = editRecipeFromDetail.dataset.editRecipeFromDetail;
+
+    const recipe = state.recipes.find(
+      r => String(r.id) === String(id)
+    );
+
+    if (!recipe) {
+      showToast("Recette introuvable");
+      return;
+    }
+
+    // Ferme la fiche recette
+    const detailModal = $("#modal");
+
+    if (detailModal.open) {
+      detailModal.close();
+    }
+
+    // Même comportement que "Modifier" dans Mes recettes
+    $("#recipeModalTitle").textContent = "Modifier la recette";
+    $("#recipeModalSubtitle").textContent = recipe.name;
+    $("#saveRecipe").textContent = "Mettre à jour";
+
+    loadRecipe(recipe);
+
+    // Très important : on conserve l'ID
+    recipeForm.dataset.recipeId = recipe.id;
+
+    // Ouvre le formulaire complet
+    recipeModal.classList.remove("hidden");
+
+    console.log("✏️ Modification de la recette :", recipe.name);
+
+    return;
+  }
+
 
   const delRecipe = e.target.closest("[data-delete-recipe]");
 
