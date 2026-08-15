@@ -2149,3 +2149,86 @@ dialog form {
     margin: 0;
     cursor: pointer;
 }
+
+/* ==========================================
+   RESPONSIVE — FORMULAIRE RECETTE
+   ========================================== */
+
+@media (max-width: 720px) {
+
+    /* Fenêtre modale */
+    .modal-content {
+        width: calc(100vw - 20px);
+        max-width: none;
+        max-height: 92vh;
+        padding: 20px;
+        border-radius: 18px;
+    }
+
+    .modal-body {
+        padding-right: 0;
+    }
+
+    /* Formulaire recette */
+    .recipe-form {
+        gap: 18px;
+        margin-top: 18px;
+    }
+
+    /* Photo + informations */
+    .recipe-top-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        margin: 18px 0;
+    }
+
+    /* Photo */
+    .photo-dropzone {
+        height: 220px;
+        min-height: 220px;
+        max-height: 220px;
+    }
+
+    .photo-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
+
+    .photo-text {
+        font-size: 17px;
+    }
+
+    /* Nom / emoji / portions / temps */
+    .recipe-form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    /* Temps */
+    .recipe-times {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 14px;
+    }
+
+    /* Ingrédients */
+    .ingredient-row {
+        gap: 8px;
+    }
+
+    /* Étapes */
+    .step-row {
+        gap: 8px;
+    }
+
+    /* Boutons de la fenêtre */
+    .modal-actions {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .modal-actions button {
+        width: 100%;
+        min-height: 44px;
+    }
+}

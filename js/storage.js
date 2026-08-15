@@ -37,6 +37,7 @@ function recipeToSupabase(recipe) {
         name: recipe.name ?? "",
         photo: recipe.photo ?? "",
         category: recipe.category ?? "Plat",
+        categories: recipe.categories ?? [],
         tags: recipe.tags ?? [],
 
         emoji: recipe.emoji ?? "🍽️",
@@ -91,6 +92,7 @@ function supabaseToRecipe(row) {
         photo: row.photo ?? "",
 
         category: row.category ?? "Plat",
+        categories: row.categories ?? [],
         tags: row.tags ?? [],
 
         emoji: row.emoji ?? "🍽️",
