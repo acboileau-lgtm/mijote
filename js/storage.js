@@ -10,7 +10,7 @@ const SUPABASE_URL = "https://tcgitffsqqngjandpvlk.supabase.co";
 const SUPABASE_KEY = "sb_publishable_KRkKQu-Vcv5sx2XVqvoMxA_ly6m-6Kp";
 
 const RECIPES_ENDPOINT = `${SUPABASE_URL}/rest/v1/recipes`;
-
+const PLANNING_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning`;
 
 // ======================================================
 // HEADERS SUPABASE
@@ -318,6 +318,172 @@ async function deleteRecipeFromDB(id) {
 
 
 // ======================================================
+// PLANNING
+// ======================================================
+
+async function getPlanning(weekStart) {
+
+    console.log(
+        "📅 Chargement du planning depuis Supabase..."
+    );
+
+    const response = await fetch(
+        `${PLANNING_ENDPOINT}?week_start=eq.${encodeURIComponent(weekStart)}&select=*`,
+        {
+            method: "GET",
+            headers: getHeaders()
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur lecture planning Supabase :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de charger le planning (${response.status})`
+        );
+    }
+
+    const rows = await response.json();
+
+    if (rows.length === 0) {
+        console.log("📅 Aucun planning trouvé");
+        return null;
+    }
+
+    console.log(
+        "✅ Planning chargé depuis Supabase"
+    );
+
+    return rows[0];
+}
+
+
+async function savePlanning(meals, weekStart) {
+
+    console.log(
+        "☁️ Sauvegarde planning Supabase..."
+    );
+
+    try {
+
+        // Cherche si cette semaine existe déjà
+        const existingResponse = await fetch(
+            `${PLANNING_ENDPOINT}?week_start=eq.${encodeURIComponent(weekStart)}&select=id`,
+            {
+                method: "GET",
+                headers: getHeaders()
+            }
+        );
+
+        if (!existingResponse.ok) {
+            throw new Error(
+                `Recherche planning impossible (${existingResponse.status})`
+            );
+        }
+
+        const existingRows = await existingResponse.json();
+
+        // ==========================================
+        // LA SEMAINE EXISTE → UPDATE
+        // ==========================================
+
+        if (existingRows.length > 0) {
+
+            const id = existingRows[0].id;
+
+            const response = await fetch(
+                `${PLANNING_ENDPOINT}?id=eq.${id}`,
+                {
+                    method: "PATCH",
+
+                    headers: getHeaders({
+                        "Prefer": "return=minimal"
+                    }),
+
+                    body: JSON.stringify({
+                        meals: meals,
+                        week_start: weekStart
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+
+                console.error(
+                    "❌ Erreur mise à jour planning :",
+                    errorText
+                );
+
+                throw new Error(
+                    `Impossible de mettre à jour le planning (${response.status})`
+                );
+            }
+
+            console.log(
+                "✅ Planning existant mis à jour :",
+                weekStart
+            );
+
+            return;
+        }
+
+        // ==========================================
+        // LA SEMAINE N'EXISTE PAS → INSERT
+        // ==========================================
+
+        const response = await fetch(
+            PLANNING_ENDPOINT,
+            {
+                method: "POST",
+
+                headers: getHeaders({
+                    "Prefer": "return=minimal"
+                }),
+
+                body: JSON.stringify({
+                    meals: meals,
+                    week_start: weekStart
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+
+            console.error(
+                "❌ Erreur création planning :",
+                errorText
+            );
+
+            throw new Error(
+                `Impossible de créer le planning (${response.status})`
+            );
+        }
+
+        console.log(
+            "✅ Nouveau planning créé :",
+            weekStart
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Erreur sauvegarde planning :",
+            error
+        );
+
+        throw error;
+    }
+}
+
+// ======================================================
 // EXPORTS
 // ======================================================
 
@@ -325,5 +491,7 @@ export {
     openDatabase,
     saveRecipeToDB,
     getAllRecipes,
-    deleteRecipeFromDB
+    deleteRecipeFromDB,
+    getPlanning,
+    savePlanning
 };

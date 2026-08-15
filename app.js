@@ -11,7 +11,9 @@ import {
   openDatabase,
   saveRecipeToDB,
   getAllRecipes,
-  deleteRecipeFromDB
+  deleteRecipeFromDB,
+  getPlanning,
+  savePlanning
 } from "./js/storage.js";
 
 import { importRecipe } from "./js/import.js";
@@ -59,7 +61,49 @@ let currentDate = new Date();
 const slotNames = { lunch: "DÉJEUNER", dinner: "DÎNER" };
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
-const save = () => localStorage.setItem("mijote-state", JSON.stringify(state));
+function getCurrentWeekStart() {
+  const days = getWeekDays();
+  const date = days[0].date;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+
+async function save() {
+
+  // Sauvegarde locale de sécurité
+  localStorage.setItem(
+    "mijote-state",
+    JSON.stringify(state)
+  );
+
+  // Sauvegarde du planning dans Supabase
+  try {
+
+    const weekStart = getCurrentWeekStart();
+
+    await savePlanning(
+      state.meals,
+      weekStart
+    );
+
+    console.log(
+      "☁️ Planning sauvegardé pour la semaine :",
+      weekStart
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de sauvegarder le planning dans Supabase :",
+      error
+    );
+  }
+}
 
 const recipeModal = $("#recipeModal");
 const openRecipeModal = $("#openRecipeModal");
@@ -1108,6 +1152,58 @@ function navigate(view) {
   $$(".view").forEach(el => el.classList.toggle("active", el.id === view));
   $$("[data-view]").forEach(el => el.classList.toggle("active", el.dataset.view === view));
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function loadPlanningFromSupabase() {
+
+  const weekStart = getCurrentWeekStart();
+
+  console.log(
+    "📅 Chargement du planning pour :",
+    weekStart
+  );
+
+  try {
+
+    const planning = await getPlanning(
+      weekStart
+    );
+
+    if (planning) {
+
+      state.meals = planning.meals || {};
+
+      console.log(
+        "☁️ Planning chargé depuis Supabase :",
+        state.meals
+      );
+
+    } else {
+
+      // Aucune semaine enregistrée
+      state.meals = {};
+
+      console.log(
+        "📅 Aucun planning enregistré pour cette semaine"
+      );
+    }
+
+    // On garde également une copie locale
+    localStorage.setItem(
+      "mijote-state",
+      JSON.stringify(state)
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de charger le planning Supabase :",
+      error
+    );
+
+    // En cas de problème réseau,
+    // on conserve le planning local existant.
+  }
 }
 
 function renderWeek() {
@@ -2291,17 +2387,38 @@ $$(".filter-chip").forEach(btn => btn.addEventListener("click", () => {
 }));
 $("#recipeSearch").addEventListener("input", e => renderRecipes(activeFilter, e.target.value));
 
-$("#todayWeek").addEventListener("click", () => {
+$("#todayWeek").addEventListener("click", async () => {
+
   currentDate = new Date();
+
+  await loadPlanningFromSupabase();
+
   renderWeek();
+
   showToast("Retour à la semaine actuelle");
 });
-$("#prevWeek").addEventListener("click", () => {
-  currentDate.setDate(currentDate.getDate() - 7);
+
+
+$("#prevWeek").addEventListener("click", async () => {
+
+  currentDate.setDate(
+    currentDate.getDate() - 7
+  );
+
+  await loadPlanningFromSupabase();
+
   renderWeek();
 });
-$("#nextWeek").addEventListener("click", () => {
-  currentDate.setDate(currentDate.getDate() + 7);
+
+
+$("#nextWeek").addEventListener("click", async () => {
+
+  currentDate.setDate(
+    currentDate.getDate() + 7
+  );
+
+  await loadPlanningFromSupabase();
+
   renderWeek();
 });
 
@@ -2317,6 +2434,8 @@ async function initializeApp() {
 
   state.recipes = (await initializeRecipes())
     .map(createRecipe);
+
+  await loadPlanningFromSupabase();
 
   renderWeek();
   renderRecipes();
