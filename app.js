@@ -26,12 +26,15 @@ import { createRecipe } from "./js/recipe.js";
 const defaultState = {
   weekStart: "wednesday",
 
+  weatherLocation: {
+    city: "Tourcoing",
+    latitude: 50.7214,
+    longitude: 3.1614
+  },
+
   recipes: [],
-
   meals: {},
-
   shopping: [],
-
   fridge: []
 };
 
@@ -1140,6 +1143,69 @@ function getWeekDays() {
   return days;
 }
 
+async function getWeatherForWeek(days) {
+  try {
+    const location = state.weatherLocation;
+
+    if (!location?.latitude || !location?.longitude) {
+      console.warn("⚠️ Localisation météo non configurée");
+      return days.map(() => null);
+    }
+
+    const startDate = days[0].date.toISOString().split("T")[0];
+    const endDate = days[days.length - 1].date.toISOString().split("T")[0];
+
+    const url =
+      `https://api.open-meteo.com/v1/forecast` +
+      `?latitude=${location.latitude}` +
+      `&longitude=${location.longitude}` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max` +
+      `&temperature_unit=celsius` +
+      `&wind_speed_unit=kmh` +
+      `&timezone=Europe%2FParis` +
+      `&start_date=${startDate}` +
+      `&end_date=${endDate}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Erreur météo : ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return days.map(day => {
+      const date = day.date.toISOString().split("T")[0];
+      const index = data.daily.time.indexOf(date);
+
+      if (index === -1) {
+        return null;
+      }
+
+      return {
+        date,
+        weatherCode: data.daily.weather_code[index],
+        max: Math.round(data.daily.temperature_2m_max[index]),
+        min: Math.round(data.daily.temperature_2m_min[index]),
+        wind: Math.round(data.daily.wind_speed_10m_max[index])
+      };
+    });
+
+  } catch (error) {
+    console.error("❌ Impossible de récupérer la météo :", error);
+    return days.map(() => null);
+  }
+}
+
+async function testWeather() {
+  const days = getWeekDays();
+  const weather = await getWeatherForWeek(days);
+
+  console.log("🌤️ MÉTÉO DE LA SEMAINE :", weather);
+}
+window.testWeather = testWeather;
+
+
 function showToast(message) {
   const toast = $("#toast");
   toast.textContent = message;
@@ -1206,26 +1272,134 @@ async function loadPlanningFromSupabase() {
   }
 }
 
+function getWeatherIcon(code) {
+  if (code === 0) return "☀️";
+  if (code === 1) return "🌤️";
+  if (code === 2) return "⛅";
+  if (code === 3) return "☁️";
+
+  if (code >= 45 && code <= 48) return "🌫️";
+
+  if (code >= 51 && code <= 57) return "🌦️";
+
+  if (code >= 61 && code <= 67) return "🌧️";
+
+  if (code >= 71 && code <= 77) return "🌨️";
+
+  if (code >= 80 && code <= 82) return "🌦️";
+
+  if (code >= 85 && code <= 86) return "🌨️";
+
+  if (code >= 95) return "⛈️";
+
+  return "🌤️";
+}
+
+async function renderWeather(days) {
+  const weatherStrip = $("#weatherStrip");
+
+  if (!weatherStrip) return;
+
+  const city = state.weatherLocation?.city || "Tourcoing";
+
+  const startDate = days[0].date;
+  const endDate = days[days.length - 1].date;
+
+  const dateOptions = {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  };
+
+  const startLabel = startDate.toLocaleDateString("fr-FR", dateOptions);
+  const endLabel = endDate.toLocaleDateString("fr-FR", dateOptions);
+
+  // Affichage du titre et des cartes météo
+  weatherStrip.innerHTML = `
+    <div class="weather-heading">
+      <h3>🌤️ Météo à ${city}</h3>
+      <p>Prévisions du ${startLabel} au ${endLabel}</p>
+    </div>
+
+    <div class="weather-cards"></div>
+  `;
+
+  // Récupération des données météo
+  const weather = await getWeatherForWeek(days);
+
+  // Création des 7 cartes
+  weatherStrip.querySelector(".weather-cards").innerHTML =
+    days.map((day, index) => {
+      const data = weather[index];
+
+      if (!data) {
+        return `
+          <div class="weather-card">
+            <div class="weather-day">
+              <strong>${day.name.toUpperCase()}</strong>
+              <span>${day.day}</span>
+            </div>
+
+            <div class="weather-icon">❔</div>
+
+            <div class="weather-temperatures">
+              Météo indisponible
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="weather-card">
+          <div class="weather-day">
+            <strong>${day.name.toUpperCase()}</strong>
+            <span>${day.day}</span>
+          </div>
+
+          <div class="weather-icon">
+            ${getWeatherIcon(data.weatherCode)}
+          </div>
+
+          <div class="weather-temperatures">
+            <span>${data.min}°</span>
+            <strong>${data.max}°</strong>
+          </div>
+
+          <div class="weather-wind">
+            💨 ${data.wind} km/h
+          </div>
+        </div>
+      `;
+    }).join("");
+}
+
+
 function renderWeek() {
   updateWeekTitle();
   updateTodayDate();
 
   const days = getWeekDays();
+
+  renderWeather(days);
+
   const today = new Date();
 
   $("#weekGrid").innerHTML = days.map((dayInfo, day) => `
-    <article class="day-column ${dayInfo.date.toDateString() === today.toDateString()
-      ? "today"
-      : ""
-    }">
+    <article class="day-column ${dayInfo.date.toDateString() === today.toDateString() ? "today" : ""}">
       <header class="day-header">
-      <strong>${dayInfo.name}</strong>
-      <span>${dayInfo.day}</span>
+        <strong>${dayInfo.name}</strong>
+        <span>${dayInfo.day}</span>
       </header>
+
       ${["lunch", "dinner"].map(slot => renderSlot(day, slot)).join("")}
-    </article>`).join("");
+    </article>
+  `).join("");
+
   $("#plannedCount").textContent = Object.keys(state.meals).length;
+
+  updateWeekSummary();
 }
+
 
 function updateWeekTitle() {
   const months = [
@@ -1241,7 +1415,7 @@ function updateWeekTitle() {
   lastDay.setDate(firstDay.getDate() + 6);
 
   $("#weekTitle").textContent =
-    `DU ${firstDay.getDate()} AU ${lastDay.getDate()} ${months[lastDay.getMonth()]}`;
+    `DU ${firstDay.getDate()} AU ${lastDay.getDate()} ${months[lastDay.getMonth()]} `;
 }
 
 function updateTodayDate() {
@@ -1259,7 +1433,7 @@ function updateTodayDate() {
   ];
 
   $("#todayDate").textContent =
-    `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+    `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]} `;
 
   const firstDay = new Date(currentDate);
   const diff = (firstDay.getDay() - 3 + 7) % 7;
@@ -1270,9 +1444,11 @@ function updateTodayDate() {
   );
 
   if (todayIndex < 0 || todayIndex > 6) {
-    $("#todayMeals").innerHTML = "";
+    $("#todayCard").style.display = "none";
     return;
   }
+
+  $("#todayCard").style.display = "";
 
   const lunchKey = `${todayIndex}-lunch`;
   const dinnerKey = `${todayIndex}-dinner`;
@@ -1283,9 +1459,18 @@ function updateTodayDate() {
   const getTodayMeal = (meal) => {
     if (!meal) return null;
 
-    // Recette
+    // Ancien format : l'ID de la recette est stocké directement
+    if (typeof meal !== "object") {
+      return state.recipes.find(
+        r => String(r.id) === String(meal)
+      ) || null;
+    }
+
+    // Nouveau format : la recette est référencée par recipeId
     if (meal.type === "recipe") {
-      return state.recipes.find(r => r.id === meal.recipeId) || null;
+      return state.recipes.find(
+        r => String(r.id) === String(meal.recipeId)
+      ) || null;
     }
 
     // Repas libre ou occasion
@@ -1299,8 +1484,8 @@ function updateTodayDate() {
   console.log("🌙 DINNER DU JOUR :", dinnerMeal);
 
   $("#todayMeals").innerHTML = `
-    <div class="today-meal">
-      <h3>🌞 Déjeuner</h3>
+  <div class="today-meal" >
+    <h3>🌞 Déjeuner</h3>
       ${lunchRecipe
       ? `
       <div class="meal-card ${getMealColorClass(lunchRecipe)}">
@@ -1325,9 +1510,9 @@ function updateTodayDate() {
     }
     </div>
 
-    <div class="today-meal">
-      <h3>🌙 Dîner</h3>
-      ${dinnerRecipe
+  <div class="today-meal">
+    <h3>🌙 Dîner</h3>
+    ${dinnerRecipe
       ? `
       <div class="meal-card ${getMealColorClass(dinnerRecipe)}">
           ${dinnerRecipe.photo
@@ -1349,8 +1534,8 @@ function updateTodayDate() {
   `
       : "<p>Aucun repas prévu</p>"
     }
-    </div>
-  `;
+  </div>
+`;
 }
 
 function renderSlot(day, slot) {
@@ -1367,21 +1552,21 @@ function renderSlot(day, slot) {
 
       ${planned
       ? `
-            <button
-              class="remove-meal"
-              data-remove-meal="${key}"
-              aria-label="Retirer"
-            >×</button>
+          <button
+            class="remove-meal"
+            data-remove-meal="${key}"
+            aria-label="Retirer"
+          >×</button>
 
-            ${renderMealCard(planned, key)}
-          `
+          ${renderMealCard(planned, key)}
+        `
       : `
-            <button
-              class="add-meal"
-              data-add-meal="${key}"
-              aria-label="Ajouter un repas"
-            >＋</button>
-          `
+          <button
+            class="add-meal"
+            data-add-meal="${key}"
+            aria-label="Ajouter un repas"
+          >＋</button>
+        `
     }
     </div>
   `;
@@ -1485,7 +1670,7 @@ function renderMealCard(planned, key) {
     `;
   }
 
-  return `<p>Repas inconnu</p>`;
+  return "";
 }
 
 function getMealColorClass(meal) {
@@ -1549,9 +1734,9 @@ function renderRecipes(filter = "all", query = "") {
 
   $("#recipeGrid").innerHTML = recipes.length
     ? recipes.map(r => `
-            <article class="recipe-card">
+  < article class="recipe-card" >
 
-                <!-- ⭐ Favori : en dehors de la photo -->
+                < !-- ⭐ Favori: en dehors de la photo-- >
                 <div class="recipe-badges">
 
     <span
@@ -1562,17 +1747,17 @@ function renderRecipes(filter = "all", query = "") {
 
     <button
         class="favorite-button ${r.favorite ? "favorite" : ""}"
-        data-favorite="${r.id}"
-        title="${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}">
-        ${r.favorite ? "★" : "☆"}
-    </button>
+data - favorite="${r.id}"
+title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
+  ${r.favorite ? "★" : "☆"}
+    </button >
 
 </div>
 
-                <!-- 📷 Zone visuelle -->
-                <div class="recipe-visual ${r.color === "sage" ? "" : r.color}">
+                < !-- 📷 Zone visuelle-- >
+  <div class="recipe-visual ${r.color === " sage" ? "" : r.color}" >
 
-                    ${r.photo
+    ${r.photo
         ? `<img src="${r.photo}" alt="${r.name}">`
         : `<div class="recipe-placeholder">
                                 ${r.emoji}
@@ -1581,85 +1766,86 @@ function renderRecipes(filter = "all", query = "") {
 
                 </div>
 
-                <!-- 📝 Contenu de la recette -->
-                <div class="recipe-content">
+                < !-- 📝 Contenu de la recette-- >
+  <div class="recipe-content">
 
-                    <h3>${r.name}</h3>
+    <h3>${r.name}</h3>
 
-                    <p class="recipe-meta">
-                        ◷ ${getTotalTime(r)} min
-                        &nbsp;·&nbsp;
-                        ♙ ${r.portions} personnes
-                    </p>
+    <p class="recipe-meta">
+      ◷ ${getTotalTime(r)} min
+      &nbsp;·&nbsp;
+      ♙ ${r.portions} personnes
+    </p>
 
-                    <div class="tags">
-                        ${(r.tags ?? [])
+    <div class="tags">
+      ${(r.tags ?? [])
         .map(t => `<span class="tag">${t}</span>`)
         .join("")}
-                    </div>
+    </div>
 
-                    <div class="recipe-actions">
+    <div class="recipe-actions">
 
-                        <button data-plan-recipe="${r.id}">
-                            Planifier
-                        </button>
+      <button data-plan-recipe="${r.id}">
+        Planifier
+      </button>
 
-                        <button data-edit-recipe="${r.id}">
-                            Modifier
-                        </button>
+      <button data-edit-recipe="${r.id}">
+        Modifier
+      </button>
 
-                        <button data-delete-recipe="${r.id}">
-                            Supprimer
-                        </button>
+      <button data-delete-recipe="${r.id}">
+        Supprimer
+      </button>
 
-                    </div>
+    </div>
 
-                </div>
+  </div>
 
-            </article>
-        `).join("")
-    : `<div class="empty-state">
-            Aucune recette ne correspond à votre recherche.
-          </div>`;
+            </article >
+  `).join("")
+    : `<div class="empty-state" >
+  Aucune recette ne correspond à votre recherche.
+          </div> `;
 }
 
 function renderShopping() {
   const groups = [...new Set(state.shopping.map(i => i.group))];
   $("#shoppingList").innerHTML = groups.map(group => `
-    <section class="shopping-group"><h3>${group}</h3>
+  < section class="shopping-group" > <h3>${group}</h3>
       ${state.shopping.filter(i => i.group === group).map(i => `
         <label class="shopping-item ${i.checked ? "checked" : ""}">
           <input type="checkbox" data-check-item="${i.id}" ${i.checked ? "checked" : ""}>
           <span>${i.name}</span><small>${i.qty}</small>
-        </label>`).join("")}
-    </section>`).join("");
+        </label>`).join("")
+    }
+    </section > `).join("");
   const checked = state.shopping.filter(i => i.checked).length;
   const total = state.shopping.length;
   $("#progressText").textContent = `${checked} sur ${total} articles`;
-  $("#progressBar").style.width = total ? `${checked / total * 100}%` : "0";
+  $("#progressBar").style.width = total ? `${checked / total * 100}% ` : "0";
   $("#remainingCount").textContent = total - checked;
   $("#shoppingBadge").textContent = total - checked;
 }
 
 function renderFridge() {
   $("#fridgeGrid").innerHTML = state.fridge.map(f => `
-    <article class="fridge-card"><span class="food-icon">${f.emoji}</span><h3>${f.name}</h3><p>${f.qty}</p>
-      <span class="expiry ${f.soon ? "soon" : ""}">${f.soon ? "À utiliser · " : "Encore "}${f.expiry}</span>
-    </article>`).join("");
+  < article class="fridge-card" ><span class="food-icon">${f.emoji}</span><h3>${f.name}</h3><p>${f.qty}</p>
+      <span class="expiry ${f.soon ? "soon" : ""}" > ${f.soon ? "À utiliser · " : "Encore "}${f.expiry}</span >
+    </article > `).join("");
 }
 
 function renderCategoryChips(container, selectedCategories = []) {
 
   container.innerHTML = getAllCategories()
     .map(category => `
-            <button
-                type="button"
-                class="chip"
-                aria-pressed="${selectedCategories.includes(category.id)}"
-                data-category-id="${category.id}">
-                ${category.icon} ${category.label}
-            </button>
-        `)
+  < button
+type = "button"
+class="chip"
+aria - pressed="${selectedCategories.includes(category.id)}"
+data - category - id="${category.id}" >
+  ${category.icon} ${category.label}
+            </button >
+  `)
     .join("");
 
   container
@@ -1706,7 +1892,7 @@ function openModal(type, payload = {}) {
   if (type === "recipe") {
     eyebrow.textContent = "NOUVELLE RECETTE"; title.textContent = "Ajouter une recette";
     fields.innerHTML = `
-  <div class="field">
+  <div class="field" >
     <label>Nom de la recette</label>
     <input name="name" required placeholder="Ex. Gratin de courgettes">
   </div>
@@ -1743,7 +1929,7 @@ function openModal(type, payload = {}) {
     title.textContent = "Que souhaitez-vous prévoir ?";
 
     fields.innerHTML = `
-        <div class="field">
+  <div class="field" >
             <label>Type</label>
             <select name="mealType" id="mealType" required>
                 <option value="recipe">🍲 Une recette</option>
@@ -1780,7 +1966,7 @@ function openModal(type, payload = {}) {
                 accept="image/*"
             >
         </div>
-    `;
+`;
 
     const mealType = fields.querySelector("#mealType");
     const mealRecipeField = fields.querySelector("#mealRecipeField");
@@ -1813,18 +1999,18 @@ function openModal(type, payload = {}) {
     title.textContent = "Choisir un créneau";
 
     fields.innerHTML = `
-        <div class="field">
+  <div class="field" >
             <label>Recette</label>
             <p><strong>${payload.recipe.name}</strong></p>
         </div>
 
-        <div class="field">
-            <label>Créneau</label>
+  <div class="field">
+    <label>Créneau</label>
 
-            <select name="slot" required>
-                <option value="">Choisir...</option>
+    <select name="slot" required>
+      <option value="">Choisir...</option>
 
-                ${getWeekDays().flatMap((dayInfo, day) =>
+      ${getWeekDays().flatMap((dayInfo, day) =>
       ["lunch", "dinner"].map(slot => {
 
         const key = `${day}-${slot}`;
@@ -1843,9 +2029,9 @@ function openModal(type, payload = {}) {
     ).join("")
       }
 
-            </select>
-        </div>
-    `;
+    </select>
+  </div>
+`;
   }
 
   else if (type === "complete-week") {
@@ -1854,11 +2040,11 @@ function openModal(type, payload = {}) {
     title.textContent = "Compléter ma semaine";
 
     fields.innerHTML = `
-    <div class="field">
-      <label>
-        <input type="checkbox" name="noDuplicates" checked>
+  <div class="field" >
+    <label>
+      <input type="checkbox" name="noDuplicates" checked>
         Éviter les doublons
-      </label>
+    </label>
     </div>
 
     <div class="field">
@@ -1888,16 +2074,16 @@ function openModal(type, payload = {}) {
         Prioriser les aliments du frigo
       </label>
     </div>
-  `;
+`;
   }
   else if (type === "shopping") {
     eyebrow.textContent = "LISTE DE COURSES"; title.textContent = "Ajouter un article";
-    fields.innerHTML = `<div class="field"><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
+    fields.innerHTML = `<div class="field" ><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
       <div class="field"><label>Rayon</label><select name="group"><option>Fruits & légumes</option><option>Épicerie</option><option>Crèmerie</option><option>Boucherie</option><option>Poissonnerie</option></select></div></div>`;
   } else if (type === "fridge") {
     eyebrow.textContent = "MON FRIGO"; title.textContent = "Ajouter un aliment";
-    fields.innerHTML = `<div class="field"><label>Aliment</label><input name="name" required placeholder="Ex. Champignons"></div>
+    fields.innerHTML = `<div class="field" ><label>Aliment</label><input name="name" required placeholder="Ex. Champignons"></div>
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
       <div class="field"><label>À consommer dans</label><input name="expiry" value="7 jours"></div></div>`;
   } else if (type === "recipe-details") {
@@ -1912,7 +2098,7 @@ function openModal(type, payload = {}) {
     if (!recipe) return;
 
     eyebrow.textContent = "FICHE RECETTE";
-    title.textContent = `${recipe.emoji} ${recipe.name}`;
+    title.textContent = `${recipe.emoji} ${recipe.name} `;
 
     cancelButton.textContent = "Fermer";
 
@@ -1922,7 +2108,7 @@ function openModal(type, payload = {}) {
     submitButton.dataset.editRecipeFromDetail = recipe.id;
 
     fields.innerHTML = `
-      <div class="recipe-detail-meta">
+  <div class="recipe-detail-meta" >
         <span>◷ ${getTotalTime(recipe)} min</span>
         <span>♙ ${recipe.portions} personnes</span>
         ${recipe.veggie ? "<span>☘ Végétarien</span>" : ""}
@@ -1950,8 +2136,8 @@ function openModal(type, payload = {}) {
       }
       </section>
 
-      
-    `;
+
+`;
   }
   const slotSelect = fields.querySelector('select[name="slot"]');
 
@@ -1977,6 +2163,106 @@ function fileToDataUrl(file) {
     reader.readAsDataURL(file);
   });
 }
+
+function updateWeekSummary() {
+  let plannedMeals = 0;
+  let occasions = 0;
+  let vegetarians = 0;
+  let totalMinutes = 0;
+
+  Object.values(state.meals).forEach(meal => {
+    if (!meal) return;
+
+    // Ancien format : l'ID de la recette est stocké directement
+    if (typeof meal !== "object") {
+      const recipe = state.recipes.find(
+        r => String(r.id) === String(meal)
+      );
+
+      if (recipe) {
+        plannedMeals++;
+
+        if (recipe.vegetarian) {
+          vegetarians++;
+        }
+
+        totalMinutes += getTotalTime(recipe) || 0;
+      }
+
+      return;
+    }
+
+    // Repas libre
+    if (meal.type === "free") {
+      plannedMeals++;
+      return;
+    }
+
+    // Occasion
+    if (meal.type === "occasion") {
+      occasions++;
+      return;
+    }
+
+    // Recette
+    if (meal.type === "recipe") {
+      const recipe = state.recipes.find(
+        r => String(r.id) === String(meal.recipeId)
+      );
+
+      if (!recipe) return;
+
+      plannedMeals++;
+
+      if (recipe.vegetarian) {
+        vegetarians++;
+      }
+
+      totalMinutes += getTotalTime(recipe) || 0;
+    }
+  });
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  let cookingText = "";
+
+  if (totalMinutes > 0) {
+    if (hours > 0 && minutes > 0) {
+      cookingText = `environ ${hours} h ${minutes.toString().padStart(2, "0")}`;
+    } else if (hours > 0) {
+      cookingText = `environ ${hours} h`;
+    } else {
+      cookingText = `environ ${minutes} min`;
+    }
+  }
+
+  const parts = [
+    `${plannedMeals} repas planifié${plannedMeals > 1 ? "s" : ""}`
+  ];
+
+  if (occasions > 0) {
+    parts.push(`${occasions} occasion${occasions > 1 ? "s" : ""}`);
+  }
+
+  if (vegetarians > 0) {
+    parts.push(
+      `${vegetarians} végétarien${vegetarians > 1 ? "s" : ""}`
+    );
+  }
+
+  if (cookingText) {
+    parts.push(`${cookingText} de cuisine`);
+  }
+
+  const summary = document.querySelector("#weekSummaryText");
+
+  if (summary) {
+    summary.textContent = parts.join(" · ");
+  }
+}
+
+
 
 $("#modalForm").addEventListener("submit", async e => {
   if (e.submitter?.value === "cancel") return;
@@ -2113,7 +2399,7 @@ $("#modalForm").addEventListener("submit", async e => {
       "6-dinner": "Mardi soir"
     };
 
-    showToast(`✅ ${payload.recipe.name} planifiée • ${slotLabel[data.slot]}`);
+    showToast(`✅ ${payload.recipe.name} planifiée • ${slotLabel[data.slot]} `);
   }
   else if (type === "shopping") {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
@@ -2124,7 +2410,108 @@ $("#modalForm").addEventListener("submit", async e => {
   save(); $("#modal").close();
 });
 
+async function geocodeWeatherCity(city) {
+  const url =
+    `https://geocoding-api.open-meteo.com/v1/search` +
+    `?name=${encodeURIComponent(city)}` +
+    `&count=5` +
+    `&language=fr` +
+    `&format=json`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Erreur géocodage : ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.results?.length) {
+    throw new Error(`Ville introuvable : ${city}`);
+  }
+
+  const result =
+    data.results.find(r => r.country_code === "FR") ||
+    data.results[0];
+
+  return {
+    city: result.name,
+    latitude: result.latitude,
+    longitude: result.longitude,
+    country: result.country,
+    countryCode: result.country_code
+  };
+}
+
 document.addEventListener("click", async (e) => {
+
+  // Ouvrir les réglages
+  const openSettings = e.target.closest("#openSettingsButton");
+
+  if (openSettings) {
+    const settingsModal = document.querySelector("#settingsModal");
+    const weatherCity = document.querySelector("#weatherCity");
+
+    if (settingsModal && weatherCity) {
+      weatherCity.value = state.weatherLocation?.city || "Tourcoing";
+      settingsModal.showModal();
+    }
+
+    return;
+  }
+
+  // Fermer les réglages
+  const closeSettings = e.target.closest("#closeSettingsButton");
+  const cancelSettings = e.target.closest("#cancelSettingsButton");
+
+  if (closeSettings || cancelSettings) {
+    const settingsModal = document.querySelector("#settingsModal");
+
+    if (settingsModal?.open) {
+      settingsModal.close();
+    }
+
+    return;
+  }
+
+  // Enregistrer les réglages
+  const settingsForm = e.target.closest("#settingsForm");
+
+  if (settingsForm) {
+    const weatherCity = document.querySelector("#weatherCity");
+    const city = weatherCity?.value.trim();
+
+    if (!city) {
+      showToast("Veuillez saisir une ville");
+      return;
+    }
+
+    try {
+      const location = await geocodeWeatherCity(city);
+
+      state.weatherLocation = location;
+
+      save();
+
+      const settingsModal = document.querySelector("#settingsModal");
+
+      if (settingsModal?.open) {
+        settingsModal.close();
+      }
+
+      showToast(`Météo configurée pour ${location.city}`);
+
+    } catch (error) {
+      console.error("❌ Erreur recherche ville :", error);
+      showToast("Ville introuvable");
+      return;
+    }
+
+    return;
+  }
+
+
+
   const nav = e.target.closest("[data-view], [data-view-link]");
   // Ouvrir la fiche recette depuis le planning
   const openRecipe = e.target.closest("[data-open-recipe]");

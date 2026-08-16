@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
 
@@ -162,7 +162,7 @@ button {
     display: flex;
     align-items: center;
     gap: 11px;
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     font-size: 25px;
     font-weight: 700;
     text-decoration: none;
@@ -344,7 +344,7 @@ main {
 
 h1,
 h2 {
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     line-height: 1.1;
 }
 
@@ -536,7 +536,7 @@ h2 {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     font-size: 16px;
 }
 
@@ -676,9 +676,10 @@ h2 {
 }
 
 .meal-card strong {
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", sans-serif;
     line-height: 1.15;
     font-size: 15px;
+    font-weight: 700;
 }
 
 .meal-card small {
@@ -826,7 +827,7 @@ h2 {
 
 .recipe-content h3 {
     margin: 0;
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     font-size: 19px;
     min-height: 2.6em;
 }
@@ -968,7 +969,7 @@ h2 {
 }
 
 .summary-card h3 {
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     font-size: 22px;
     margin: 14px 0 7px;
 }
@@ -1046,7 +1047,7 @@ h2 {
 
 .fridge-card h3 {
     margin: 12px 0 3px;
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     font-size: 17px;
 }
 
@@ -1172,7 +1173,7 @@ dialog form {
 
 .recipe-detail-section h3 {
     margin: 0 0 10px;
-    font-family: "Playfair Display", serif;
+    font-family: "Plus Jakarta Sans", serif;
     font-size: 18px;
 }
 
@@ -1500,6 +1501,11 @@ dialog form {
 
     z-index: 999;
 }
+
+.modal:not([open]) {
+    display: none;
+}
+
 
 .modal-content {
 
@@ -2231,4 +2237,87 @@ dialog form {
         width: 100%;
         min-height: 44px;
     }
+}
+
+.weather-strip {
+    margin: 0 0 18px;
+}
+
+.weather-heading {
+    margin: 0 0 12px;
+}
+
+.weather-heading h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.weather-heading p {
+    margin: 3px 0 0;
+    color: #68736d;
+    font-size: 13px;
+}
+
+.weather-cards {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.weather-card {
+    background: #fff;
+    border: 1px solid #e4e0d7;
+    border-radius: 14px;
+    padding: 12px 8px;
+    text-align: center;
+    min-height: 130px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.weather-day {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.weather-day strong {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+.weather-day span {
+    font-size: 13px;
+}
+
+.weather-icon {
+    font-size: 34px;
+    line-height: 1;
+    margin: 3px 0;
+}
+
+.weather-temperatures {
+    display: flex;
+    gap: 5px;
+    align-items: baseline;
+    font-size: 15px;
+}
+
+.weather-temperatures span {
+    color: #68736d;
+}
+
+.weather-temperatures strong {
+    font-size: 17px;
+}
+
+.weather-wind {
+    font-size: 11px;
+    color: #68736d;
 }

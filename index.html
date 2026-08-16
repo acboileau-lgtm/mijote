@@ -33,7 +33,9 @@
       <div class="profile">
         <div class="avatar">CM</div>
         <div><strong>Chez nous</strong><small>4 personnes</small></div>
-        <button aria-label="Réglages">•••</button>
+        <button id="openSettingsButton" aria-label="Réglages" type="button">
+          •••
+        </button>
       </div>
     </aside>
 
@@ -95,13 +97,15 @@
           </div>
         </section>
 
+        <div class="weather-strip" id="weatherStrip"></div>
+
         <div class="week-grid" id="weekGrid"></div>
 
         <section class="bottom-card">
           <div class="bottom-card-copy">
             <span class="soft-icon">☘</span>
             <div><strong>Votre semaine en un coup d’œil</strong>
-              <p>5 repas planifiés · 2 végétariens · environ 2 h 15 de cuisine</p>
+              <p id="weekSummaryText"></p>
             </div>
           </div>
           <div class="legend"><span><i class="dot veggie"></i> Végétarien</span><span><i class="dot quick"></i> Moins de
@@ -482,6 +486,45 @@
 
 
   <script type="module" src="app.js"></script>
+
+  <dialog id="settingsModal" class="modal">
+    <form method="dialog" id="settingsForm" class="modal-content">
+
+      <div class="modal-header">
+        <div>
+          <div class="modal-eyebrow">PARAMÈTRES</div>
+          <h2>Réglages de Mijoté</h2>
+        </div>
+
+        <button type="button" class="modal-close" id="closeSettingsButton" aria-label="Fermer">
+          ×
+        </button>
+      </div>
+
+      <div class="settings-section">
+        <h3>🌤️ Météo</h3>
+
+        <div class="field">
+          <label for="weatherCity">Ville météo</label>
+          <input id="weatherCity" name="weatherCity" type="text" value="Tourcoing" autocomplete="off">
+          <small>
+            La météo affichée dans le planning sera celle de cette ville.
+          </small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="secondary-button" id="cancelSettingsButton">
+          Annuler
+        </button>
+
+        <button type="submit" class="primary-button">
+          Enregistrer
+        </button>
+      </div>
+
+    </form>
+  </dialog>
 
 </body>
 
