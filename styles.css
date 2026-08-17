@@ -2353,14 +2353,14 @@ dialog form {
 
     .weather-cards {
         display: grid !important;
-        grid-template-columns: repeat(7, 208px) !important;
-        gap: 15px !important;
+        grid-template-columns: repeat(7, 140px) !important;
+        gap: 9px !important;
         width: max-content !important;
         overflow-x: visible !important;
     }
 
     .weather-card {
-        width: 208px !important;
+        width: 140px !important;
         box-sizing: border-box;
     }
 
