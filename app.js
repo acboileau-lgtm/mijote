@@ -1583,7 +1583,6 @@ function renderSlot(day, slot) {
 function renderMealCard(planned, key) {
 
   // Ancien format : ID directement stocké dans state.meals
-  // On le conserve temporairement pour éviter de casser les anciennes données.
   if (typeof planned !== "object") {
     const recipe = state.recipes.find(
       r => String(r.id) === String(planned)
@@ -1615,38 +1614,67 @@ function renderMealCard(planned, key) {
     `;
   }
 
-  // 🍲 RECETTE
+  // 🍲 RECETTE : 1 ou 2 recettes
   if (planned.type === "recipe") {
 
-    const recipe = state.recipes.find(
-      r => String(r.id) === String(planned.recipeId)
-    );
+    // Compatibilité avec l'ancien format
+    const recipeIds = planned.recipeIds
+      ? planned.recipeIds
+      : [planned.recipeId];
 
-    if (!recipe) {
+    const recipes = recipeIds
+      .map(id =>
+        state.recipes.find(
+          r => String(r.id) === String(id)
+        )
+      )
+      .filter(Boolean);
+
+    if (!recipes.length) {
       return `<p>Recette introuvable</p>`;
     }
 
     return `
-      <div
-        class="meal-card ${recipe.veggie
+    <div
+      class="meal-card ${recipes[0].veggie
         ? "sage"
-        : getTotalTime(recipe) <= 30
+        : getTotalTime(recipes[0]) <= 30
           ? "orange"
           : ""
       }"
-        draggable="true"
-        data-drag-meal="${key}"
-        data-open-recipe="${recipe.id}"
-      >
-        <strong>${recipe.name}</strong>
-        <small>
-          ${recipe.emoji}
-          ${getTotalTime(recipe)} min ·
-          ${recipe.portions} pers.
-        </small>
-      </div>
-    `;
+      draggable="true"
+      data-drag-meal="${key}"
+    >
+
+      ${recipes.map(recipe => `
+        <div
+          class="planned-recipe"
+          data-open-recipe="${recipe.id}"
+        >
+          <strong>${recipe.name}</strong>
+          <small>
+            ${recipe.emoji || "🍽️"}
+            ${getTotalTime(recipe)} min ·
+            ${recipe.portions} pers.
+          </small>
+        </div>
+      `).join("")}
+
+      ${recipes.length < 2 ? `
+        <button
+  type="button"
+  class="add-second-recipe"
+  data-add-second-recipe="${key}"
+  aria-label="Ajouter une deuxième recette"
+  title="Ajouter une deuxième recette"
+>
+  ＋
+</button>
+      ` : ""}
+    </div>
+  `;
   }
+
 
   // 🥫 REPAS LIBRE
   if (planned.type === "free") {
@@ -1933,8 +1961,15 @@ function openModal(type, payload = {}) {
     renderCategoryChips($("#recipeCategories"));
 
   } else if (type === "meal") {
-    eyebrow.textContent = "AJOUTER AU MENU";
-    title.textContent = "Que souhaitez-vous prévoir ?";
+    const isAddingSecondRecipe = payload.addSecondRecipe === true;
+
+    eyebrow.textContent = isAddingSecondRecipe
+      ? "AJOUTER UNE RECETTE"
+      : "AJOUTER AU MENU";
+
+    title.textContent = isAddingSecondRecipe
+      ? "Quelle recette souhaitez-vous ajouter ?"
+      : "Que souhaitez-vous prévoir ?";
 
     fields.innerHTML = `
   <div class="field" >
@@ -1949,6 +1984,9 @@ function openModal(type, payload = {}) {
         <div id="mealRecipeField" class="field">
             <label>Recette</label>
             <div class="recipe-search">
+
+    <div id="selectedRecipes" class="selected-recipes"></div>
+
     <input
         type="text"
         id="mealRecipeSearch"
@@ -1970,6 +2008,7 @@ function openModal(type, payload = {}) {
     </div>
 
     <input type="hidden" name="recipe" id="selectedRecipeId">
+
 </div>
         </div>
 
@@ -2000,42 +2039,136 @@ function openModal(type, payload = {}) {
     const mealName = fields.querySelector('[name="mealName"]');
 
     // 🔎 Recherche de recette
+
     const mealRecipeSearch = fields.querySelector("#mealRecipeSearch");
     const mealRecipeResults = fields.querySelector("#mealRecipeResults");
     const selectedRecipeId = fields.querySelector("#selectedRecipeId");
 
-    const filterRecipes = () => {
+
+    // 🍽️ Gestion de 1 ou 2 recettes
+
+    let selectedRecipeIds = [];
+
+
+    const selectedRecipes = fields.querySelector("#selectedRecipes");
+
+    function renderSelectedRecipes() {
+
+      selectedRecipes.innerHTML = selectedRecipeIds.map(id => {
+
+        const recipe = state.recipes.find(
+          r => String(r.id) === String(id)
+        );
+
+        if (!recipe) return "";
+
+        return `
+      <div class="selected-recipe">
+        <span>
+          ${recipe.emoji || "🍽️"} ${recipe.name}
+        </span>
+
+        <button
+          type="button"
+          class="remove-selected-recipe"
+          data-remove-recipe="${recipe.id}"
+        >
+          ×
+        </button>
+      </div>
+    `;
+      }).join("");
+
+      selectedRecipeId.value = selectedRecipeIds[0] || "";
+
+      const maxReached = selectedRecipeIds.length >= 2;
+
+      mealRecipeSearch.disabled = maxReached;
+
+      if (maxReached) {
+        mealRecipeSearch.placeholder = "2 recettes sélectionnées";
+        mealRecipeResults.classList.add("hidden");
+      } else {
+        mealRecipeSearch.placeholder = "🔎 Rechercher une recette...";
+      }
+    }
+
+    function filterRecipes() {
+
       const search = mealRecipeSearch.value.trim().toLowerCase();
 
-      const recipes = fields.querySelectorAll(".recipe-search-item");
+      mealRecipeResults.querySelectorAll(".recipe-search-item").forEach(item => {
 
-      recipes.forEach(item => {
+        const id = item.dataset.recipeId;
         const recipeName = item.textContent.toLowerCase();
+
+        const alreadySelected = selectedRecipeIds.some(
+          selectedId => String(selectedId) === String(id)
+        );
+
+        const matchesSearch =
+          search === "" || recipeName.includes(search);
 
         item.classList.toggle(
           "hidden",
-          search !== "" && !recipeName.includes(search)
+          alreadySelected || !matchesSearch
         );
       });
-    };
-    mealRecipeSearch.addEventListener("focus", () => {
-      mealRecipeResults.classList.remove("hidden");
-      filterRecipes();
-    });
+    }
+
     mealRecipeSearch.addEventListener("input", filterRecipes);
 
-    // Sélection d'une recette
-    mealRecipeResults.addEventListener("click", (e) => {
+    mealRecipeSearch.addEventListener("focus", () => {
+
+      if (selectedRecipeIds.length < 2) {
+        mealRecipeResults.classList.remove("hidden");
+        filterRecipes();
+      }
+
+    });
+
+    mealRecipeResults.addEventListener("click", e => {
+
       const item = e.target.closest(".recipe-search-item");
 
       if (!item) return;
 
-      selectedRecipeId.value = item.dataset.recipeId;
-      mealRecipeSearch.value = item.childNodes[0].textContent.trim();
+      const recipeId = item.dataset.recipeId;
 
-      // On masque les autres résultats après sélection
-      mealRecipeResults.classList.add("hidden");
+      if (selectedRecipeIds.length >= 2) return;
+
+      if (selectedRecipeIds.includes(recipeId)) return;
+
+      selectedRecipeIds.push(recipeId);
+
+      mealRecipeSearch.value = "";
+
+      renderSelectedRecipes();
+      filterRecipes();
+
     });
+
+    selectedRecipes.addEventListener("click", e => {
+
+      const button = e.target.closest("[data-remove-recipe]");
+
+      if (!button) return;
+
+      const recipeId = button.dataset.removeRecipe;
+
+      selectedRecipeIds = selectedRecipeIds.filter(
+        id => String(id) !== String(recipeId)
+      );
+
+      renderSelectedRecipes();
+      filterRecipes();
+
+    });
+
+    if (isAddingSecondRecipe) {
+      mealType.value = "recipe";
+      mealType.dispatchEvent(new Event("change"));
+    }
 
     mealType.addEventListener("change", () => {
       const isRecipe = mealType.value === "recipe";
@@ -2397,12 +2530,40 @@ $("#modalForm").addEventListener("submit", async e => {
 
     if (mealType === "recipe") {
 
-      state.meals[payload.key] = {
-        type: "recipe",
-        recipeId: data.recipe
-      };
+      // 🍽️ Ajout d'une deuxième recette
+      if (payload.addSecondRecipe) {
 
-      showToast("Recette ajoutée à la semaine");
+        const existingMeal = state.meals[payload.key];
+
+        if (
+          existingMeal &&
+          existingMeal.type === "recipe"
+        ) {
+
+          const existingIds = existingMeal.recipeIds
+            ? [...existingMeal.recipeIds]
+            : [existingMeal.recipeId];
+
+          if (existingIds.length < 2) {
+            existingIds.push(data.recipe);
+          }
+
+          existingMeal.recipeIds = existingIds;
+          delete existingMeal.recipeId;
+        }
+
+        showToast("Deuxième recette ajoutée à la semaine");
+
+      } else {
+
+        // 🍲 Première recette
+        state.meals[payload.key] = {
+          type: "recipe",
+          recipeIds: [data.recipe]
+        };
+
+        showToast("Recette ajoutée à la semaine");
+      }
 
     } else {
       const photoFile = data.mealPhoto;
@@ -2587,6 +2748,21 @@ document.addEventListener("click", async (e) => {
   }
   if (nav) navigate(nav.dataset.view || nav.dataset.viewLink);
   const addMeal = e.target.closest("[data-add-meal]");
+
+  const addSecondRecipe = e.target.closest("[data-add-second-recipe]");
+
+  if (addSecondRecipe) {
+
+    const key = addSecondRecipe.dataset.addSecondRecipe;
+
+    openModal("meal", {
+      key: key,
+      addSecondRecipe: true
+    });
+
+    return;
+  }
+
   if (addMeal) openModal("meal", { key: addMeal.dataset.addMeal });
   const removeMeal = e.target.closest("[data-remove-meal]");
   if (removeMeal) { delete state.meals[removeMeal.dataset.removeMeal]; save(); renderWeek(); showToast("Repas retiré"); }

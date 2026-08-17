@@ -2404,3 +2404,18 @@ dialog form {
     color: #68736d;
     font-size: 13px;
 }
+
+.add-second-recipe {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-top: 4px;
+    font-size: 24px;
+    line-height: 1;
+    color: #3f604f;
+    cursor: pointer;
+}
+
+.add-second-recipe:hover {
+    transform: scale(1.15);
+}
