@@ -1734,9 +1734,9 @@ function renderRecipes(filter = "all", query = "") {
 
   $("#recipeGrid").innerHTML = recipes.length
     ? recipes.map(r => `
-  < article class="recipe-card" >
+  <article class="recipe-card">
 
-                < !-- ⭐ Favori: en dehors de la photo-- >
+                <!-- ⭐ Favori: en dehors de la photo-->
                 <div class="recipe-badges">
 
     <span
@@ -1747,15 +1747,15 @@ function renderRecipes(filter = "all", query = "") {
 
     <button
         class="favorite-button ${r.favorite ? "favorite" : ""}"
-data - favorite="${r.id}"
+data-favorite="${r.id}"
 title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
   ${r.favorite ? "★" : "☆"}
-    </button >
+    </button>
 
 </div>
 
-                < !-- 📷 Zone visuelle-- >
-  <div class="recipe-visual ${r.color === " sage" ? "" : r.color}" >
+                <!-- 📷 Zone visuelle-->
+  <div class="recipe-visual ${r.color === "sage" ? "" : r.color}" >
 
     ${r.photo
         ? `<img src="${r.photo}" alt="${r.name}">`
@@ -1766,7 +1766,7 @@ title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
 
                 </div>
 
-                < !-- 📝 Contenu de la recette-- >
+                <!-- 📝 Contenu de la recette-->
   <div class="recipe-content">
 
     <h3>${r.name}</h3>
@@ -1801,7 +1801,7 @@ title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
 
   </div>
 
-            </article >
+            </article>
   `).join("")
     : `<div class="empty-state" >
   Aucune recette ne correspond à votre recherche.
@@ -1831,7 +1831,7 @@ function renderFridge() {
   $("#fridgeGrid").innerHTML = state.fridge.map(f => `
   < article class="fridge-card" ><span class="food-icon">${f.emoji}</span><h3>${f.name}</h3><p>${f.qty}</p>
       <span class="expiry ${f.soon ? "soon" : ""}" > ${f.soon ? "À utiliser · " : "Encore "}${f.expiry}</span >
-    </article > `).join("");
+    </article> `).join("");
 }
 
 function renderCategoryChips(container, selectedCategories = []) {
@@ -2016,18 +2016,16 @@ function openModal(type, payload = {}) {
         const key = `${day}-${slot}`;
         const plannedId = state.meals[key];
 
-        const plannedRecipe = state.recipes.find(r => r.id == plannedId);
+        // Ne proposer que les créneaux libres
+        if (plannedId) return "";
 
-        const label =
-          `${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"}` +
-          (plannedRecipe
-            ? ` 🔄 ${plannedRecipe.name}`
-            : " 🟢 Libre");
-
-        return `<option value="${key}">${label}</option>`;
-      })
-    ).join("")
-      }
+        return `
+      <option value="${key}">
+        ${dayInfo.name} ${slot === "lunch" ? "midi" : "soir"} 🟢 Libre
+      </option>
+    `;
+      }).filter(Boolean)
+    ).join("")}
 
     </select>
   </div>

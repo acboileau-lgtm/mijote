@@ -1502,7 +1502,8 @@ dialog form {
     z-index: 999;
 }
 
-.modal:not([open]) {
+#modal:not([open]),
+#settingsModal:not([open]) {
     display: none;
 }
 
