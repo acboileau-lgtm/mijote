@@ -1166,10 +1166,14 @@ async function getWeatherForWeek(days) {
       `&start_date=${startDate}` +
       `&end_date=${endDate}`;
 
-    console.log("🌤️ URL MÉTÉO :", url);
 
+
+
+    console.log("🌤️ URL météo :", url);
 
     const response = await fetch(url);
+
+    console.log("🌤️ Réponse météo :", response.status, response.ok);
 
     if (!response.ok) {
       throw new Error(`Erreur météo : ${response.status}`);
@@ -1196,9 +1200,7 @@ async function getWeatherForWeek(days) {
 
   } catch (error) {
     console.error("❌ Impossible de récupérer la météo :", error);
-
-    alert("❌ ERREUR MÉTÉO :\n" + error.message);
-
+    console.error("❌ Message :", error.message);
     return days.map(() => null);
   }
 }
