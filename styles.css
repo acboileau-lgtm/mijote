@@ -1245,11 +1245,8 @@ dialog form {
         width: max-content;
     }
 
-    .weather-strip {
-        margin: 0 0 18px;
-    }
-
     .weather-cards {
+        display: grid;
         grid-template-columns: repeat(7, 140px);
         gap: 10px;
         width: max-content;
