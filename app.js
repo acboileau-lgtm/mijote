@@ -1171,6 +1171,9 @@ async function getWeatherForWeek(days) {
 
     console.log("🌤️ URL météo :", url);
 
+    alert("TEST MÉTÉO : avant fetch");
+
+
     const response = await fetch(url);
 
     console.log("🌤️ Réponse météo :", response.status, response.ok);
