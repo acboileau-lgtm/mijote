@@ -2322,3 +2322,11 @@ dialog form {
     font-size: 11px;
     color: #68736d;
 }
+
+@media (max-width: 1050px) {
+    .weather-cards {
+        overflow-x: auto;
+        grid-template-columns: repeat(7, 140px);
+        padding-bottom: 10px;
+    }
+}
