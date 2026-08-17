@@ -2287,7 +2287,7 @@ dialog form {
 
 .weather-cards {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(7, 208px);
     gap: 10px;
 }
 
