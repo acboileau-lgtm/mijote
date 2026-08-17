@@ -2365,3 +2365,42 @@ dialog form {
     }
 
 }
+
+.recipe-search {
+    position: relative;
+}
+
+.recipe-search input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.recipe-search-results {
+    margin-top: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid #e4e0d7;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.recipe-search-item {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.recipe-search-item:hover {
+    background: #f3f0e8;
+}
+
+.recipe-search-item span {
+    color: #68736d;
+    font-size: 13px;
+}

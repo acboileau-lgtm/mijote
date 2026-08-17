@@ -1948,13 +1948,29 @@ function openModal(type, payload = {}) {
 
         <div id="mealRecipeField" class="field">
             <label>Recette</label>
-            <select name="recipe">
-                ${state.recipes.map(r => `
-                    <option value="${r.id}">
-                        ${r.name} · ${getTotalTime(r)} min
-                    </option>
-                `).join("")}
-            </select>
+            <div class="recipe-search">
+    <input
+        type="text"
+        id="mealRecipeSearch"
+        placeholder="🔎 Rechercher une recette..."
+        autocomplete="off"
+    >
+
+    <div id="mealRecipeResults" class="recipe-search-results">
+        ${state.recipes.map(r => `
+            <button
+                type="button"
+                class="recipe-search-item"
+                data-recipe-id="${r.id}"
+            >
+                ${r.name}
+                <span>· ${getTotalTime(r)} min</span>
+            </button>
+        `).join("")}
+    </div>
+
+    <input type="hidden" name="recipe" id="selectedRecipeId">
+</div>
         </div>
 
         <div id="mealTextField" class="field hidden">
@@ -1982,6 +1998,44 @@ function openModal(type, payload = {}) {
     const mealPhotoField = fields.querySelector("#mealPhotoField");
     const mealTextLabel = fields.querySelector("#mealTextLabel");
     const mealName = fields.querySelector('[name="mealName"]');
+
+    // 🔎 Recherche de recette
+    const mealRecipeSearch = fields.querySelector("#mealRecipeSearch");
+    const mealRecipeResults = fields.querySelector("#mealRecipeResults");
+    const selectedRecipeId = fields.querySelector("#selectedRecipeId");
+
+    const filterRecipes = () => {
+      const search = mealRecipeSearch.value.trim().toLowerCase();
+
+      const recipes = fields.querySelectorAll(".recipe-search-item");
+
+      recipes.forEach(item => {
+        const recipeName = item.textContent.toLowerCase();
+
+        item.classList.toggle(
+          "hidden",
+          search !== "" && !recipeName.includes(search)
+        );
+      });
+    };
+    mealRecipeSearch.addEventListener("focus", () => {
+      mealRecipeResults.classList.remove("hidden");
+      filterRecipes();
+    });
+    mealRecipeSearch.addEventListener("input", filterRecipes);
+
+    // Sélection d'une recette
+    mealRecipeResults.addEventListener("click", (e) => {
+      const item = e.target.closest(".recipe-search-item");
+
+      if (!item) return;
+
+      selectedRecipeId.value = item.dataset.recipeId;
+      mealRecipeSearch.value = item.childNodes[0].textContent.trim();
+
+      // On masque les autres résultats après sélection
+      mealRecipeResults.classList.add("hidden");
+    });
 
     mealType.addEventListener("change", () => {
       const isRecipe = mealType.value === "recipe";
