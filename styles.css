@@ -2287,7 +2287,7 @@ dialog form {
 
 .weather-cards {
     display: grid;
-    grid-template-columns: repeat(7, 208px);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 10px;
 }
 
@@ -2347,4 +2347,21 @@ dialog form {
 .weather-wind {
     font-size: 11px;
     color: #68736d;
+}
+
+@media (max-width: 1050px) {
+
+    .weather-cards {
+        display: grid !important;
+        grid-template-columns: repeat(7, 208px) !important;
+        gap: 15px !important;
+        width: max-content !important;
+        overflow-x: visible !important;
+    }
+
+    .weather-card {
+        width: 208px !important;
+        box-sizing: border-box;
+    }
+
 }
