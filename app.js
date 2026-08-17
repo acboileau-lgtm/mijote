@@ -1166,6 +1166,9 @@ async function getWeatherForWeek(days) {
       `&start_date=${startDate}` +
       `&end_date=${endDate}`;
 
+    console.log("🌤️ URL MÉTÉO :", url);
+
+
     const response = await fetch(url);
 
     if (!response.ok) {
