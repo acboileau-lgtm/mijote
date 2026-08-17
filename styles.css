@@ -1233,10 +1233,33 @@ dialog form {
         padding: 40px 28px;
     }
 
-    .week-grid {
+    .week-horizontal-scroll {
+        width: 100%;
         overflow-x: auto;
-        grid-template-columns: repeat(7, 140px);
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
         padding-bottom: 10px;
+    }
+
+    .week-horizontal-content {
+        width: max-content;
+    }
+
+    .weather-strip {
+        margin: 0 0 18px;
+    }
+
+    .weather-cards {
+        grid-template-columns: repeat(7, 140px);
+        gap: 10px;
+        width: max-content;
+    }
+
+    .week-grid {
+        overflow-x: visible;
+        grid-template-columns: repeat(7, 140px);
+        width: max-content;
+        padding-bottom: 0;
     }
 
     .recipe-grid {
@@ -2321,12 +2344,4 @@ dialog form {
 .weather-wind {
     font-size: 11px;
     color: #68736d;
-}
-
-@media (max-width: 1050px) {
-    .weather-cards {
-        overflow-x: auto;
-        grid-template-columns: repeat(7, 140px);
-        padding-bottom: 10px;
-    }
 }
