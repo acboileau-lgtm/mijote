@@ -1196,6 +1196,9 @@ async function getWeatherForWeek(days) {
 
   } catch (error) {
     console.error("❌ Impossible de récupérer la météo :", error);
+
+    alert("❌ ERREUR MÉTÉO :\n" + error.message);
+
     return days.map(() => null);
   }
 }
