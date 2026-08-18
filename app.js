@@ -1847,14 +1847,14 @@ title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
 function renderShopping() {
   const groups = [...new Set(state.shopping.map(i => i.group))];
   $("#shoppingList").innerHTML = groups.map(group => `
-  < section class="shopping-group" > <h3>${group}</h3>
+  <section class="shopping-group" > <h3>${group}</h3>
       ${state.shopping.filter(i => i.group === group).map(i => `
         <label class="shopping-item ${i.checked ? "checked" : ""}">
           <input type="checkbox" data-check-item="${i.id}" ${i.checked ? "checked" : ""}>
           <span>${i.name}</span><small>${i.qty}</small>
         </label>`).join("")
     }
-    </section > `).join("");
+    </section> `).join("");
   const checked = state.shopping.filter(i => i.checked).length;
   const total = state.shopping.length;
   $("#progressText").textContent = `${checked} sur ${total} articles`;
@@ -1874,13 +1874,13 @@ function renderCategoryChips(container, selectedCategories = []) {
 
   container.innerHTML = getAllCategories()
     .map(category => `
-  < button
+  <button
 type = "button"
 class="chip"
 aria - pressed="${selectedCategories.includes(category.id)}"
 data - category - id="${category.id}" >
   ${category.icon} ${category.label}
-            </button >
+            </button>
   `)
     .join("");
 
