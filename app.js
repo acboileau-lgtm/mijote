@@ -1362,7 +1362,7 @@ async function renderWeather(days) {
       const data = weather[index];
 
       if (!data) {
-        return `
+        return `}
           <div class="weather-card">
             <div class="weather-day">
               <strong>${day.name.toUpperCase()}</strong>
