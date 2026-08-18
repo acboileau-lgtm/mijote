@@ -11,6 +11,7 @@ const SUPABASE_KEY = "sb_publishable_KRkKQu-Vcv5sx2XVqvoMxA_ly6m-6Kp";
 
 const RECIPES_ENDPOINT = `${SUPABASE_URL}/rest/v1/recipes`;
 const PLANNING_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning`;
+const PLANNING_NOTES_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning_notes`;
 
 // ======================================================
 // HEADERS SUPABASE
@@ -486,6 +487,125 @@ async function savePlanning(meals, weekStart) {
 }
 
 // ======================================================
+// PLANNING NOTES
+// ======================================================
+
+async function getPlanningNotes() {
+
+    console.log("📝 Chargement des notes depuis Supabase...");
+
+    const response = await fetch(
+        `${PLANNING_NOTES_ENDPOINT}?select=*&order=date.asc`,
+        {
+            method: "GET",
+            headers: getHeaders()
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur lecture notes Supabase :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de charger les notes (${response.status})`
+        );
+    }
+
+    const rows = await response.json();
+
+    console.log(
+        "✅ Notes chargées depuis Supabase :",
+        rows.length
+    );
+
+    return rows;
+}
+
+
+async function savePlanningNote(note) {
+
+    console.log("☁️ Sauvegarde note Supabase :", note);
+
+    const response = await fetch(
+        PLANNING_NOTES_ENDPOINT,
+        {
+            method: "POST",
+
+            headers: getHeaders({
+                "Prefer": "return=representation"
+            }),
+
+            body: JSON.stringify({
+                note: note.note,
+                date: note.date,
+                recurring: note.recurring || false,
+                recurrence_type: note.recurrence_type || null,
+                recurrence_interval: note.recurrence_interval || 1,
+                recurrence_day: note.recurrence_day ?? null,
+                recurrence_week: note.recurrence_week ?? null
+            })
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur création note :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de créer la note (${response.status})`
+        );
+    }
+
+    const rows = await response.json();
+
+    console.log("✅ Note créée :", rows[0]);
+
+    return rows[0];
+}
+
+
+async function deletePlanningNote(id) {
+
+    console.log("🗑️ Suppression note :", id);
+
+    const response = await fetch(
+        `${PLANNING_NOTES_ENDPOINT}?id=eq.${encodeURIComponent(id)}`,
+        {
+            method: "DELETE",
+
+            headers: getHeaders({
+                "Prefer": "return=minimal"
+            })
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur suppression note :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de supprimer la note (${response.status})`
+        );
+    }
+
+    console.log("✅ Note supprimée :", id);
+}
+
+// ======================================================
 // EXPORTS
 // ======================================================
 
@@ -495,5 +615,8 @@ export {
     getAllRecipes,
     deleteRecipeFromDB,
     getPlanning,
-    savePlanning
+    savePlanning,
+    getPlanningNotes,
+    savePlanningNote,
+    deletePlanningNote
 };

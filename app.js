@@ -13,7 +13,10 @@ import {
   getAllRecipes,
   deleteRecipeFromDB,
   getPlanning,
-  savePlanning
+  savePlanning,
+  getPlanningNotes,
+  savePlanningNote,
+  deletePlanningNote
 } from "./js/storage.js";
 
 import { importRecipe } from "./js/import.js";
@@ -39,6 +42,8 @@ const defaultState = {
 };
 
 let state;
+let planningNotes = [];
+
 try { state = JSON.parse(localStorage.getItem("mijote-state")) || structuredClone(defaultState); }
 catch { state = structuredClone(defaultState); }
 
@@ -64,6 +69,7 @@ let currentDate = new Date();
 const slotNames = { lunch: "DÉJEUNER", dinner: "DÎNER" };
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+
 function getCurrentWeekStart() {
   const days = getWeekDays();
   const date = days[0].date;
@@ -72,7 +78,14 @@ function getCurrentWeekStart() {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
 
-  return `${year}-${month}-${day}`;
+  const weekStart = `${year}-${month}-${day}`;
+
+  console.log("📅 DEBUG semaine");
+  console.log("➡️ currentDate :", currentDate);
+  console.log("➡️ jours :", days.map(d => d.date.toLocaleDateString("fr-FR")));
+  console.log("➡️ weekStart :", weekStart);
+
+  return weekStart;
 }
 
 
@@ -848,7 +861,10 @@ recipeForm.addEventListener("submit", async (event) => {
 
       // Actualise immédiatement
       // "Mes recettes"
-      renderRecipes();
+      renderRecipes(
+        activeFilter,
+        $("#recipeSearch").value
+      );
     }
 
   } else {
@@ -1139,7 +1155,12 @@ function getWeekDays() {
       date: new Date(d)
     });
   }
+  console.log(
+    "📅 getWeekDays() :",
+    days.map(d => d.date.toLocaleDateString("fr-FR"))
+  );
 
+  return days;
   return days;
 }
 
@@ -1345,7 +1366,6 @@ async function renderWeather(days) {
           <div class="weather-card">
             <div class="weather-day">
               <strong>${day.name.toUpperCase()}</strong>
-              <span>${day.day}</span>
             </div>
 
             <div class="weather-icon">❔</div>
@@ -1361,7 +1381,6 @@ async function renderWeather(days) {
         <div class="weather-card">
           <div class="weather-day">
             <strong>${day.name.toUpperCase()}</strong>
-            <span>${day.day}</span>
           </div>
 
           <div class="weather-icon">
@@ -1381,6 +1400,143 @@ async function renderWeather(days) {
     }).join("");
 }
 
+function getPlanningNotesForDate(date) {
+  const dateKey =
+    `${date.getFullYear()}-` +
+    `${String(date.getMonth() + 1).padStart(2, "0")}-` +
+    `${String(date.getDate()).padStart(2, "0")}`;
+
+  return planningNotes.filter(note => {
+
+    // Note ponctuelle
+    if (!note.recurring) {
+      return note.date === dateKey;
+    }
+
+    const originalDate = new Date(`${note.date}T12:00:00`);
+
+    // Tous les ans
+    if (note.recurrence_type === "yearly") {
+      const yearsDiff =
+        date.getFullYear() - originalDate.getFullYear();
+
+      return (
+        yearsDiff >= 0 &&
+        yearsDiff % (note.recurrence_interval || 1) === 0 &&
+        date.getMonth() === originalDate.getMonth() &&
+        date.getDate() === originalDate.getDate()
+      );
+    }
+
+    // Toutes les semaines
+    if (note.recurrence_type === "weekly") {
+      const diffMs = date - originalDate;
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      return (
+        diffDays >= 0 &&
+        diffDays % (7 * (note.recurrence_interval || 1)) === 0
+      );
+    }
+
+    // Tous les mois à la même date
+    if (note.recurrence_type === "monthly_day") {
+      const monthsDiff =
+        (date.getFullYear() - originalDate.getFullYear()) * 12 +
+        (date.getMonth() - originalDate.getMonth());
+
+      return (
+        monthsDiff >= 0 &&
+        monthsDiff % (note.recurrence_interval || 1) === 0 &&
+        date.getDate() === originalDate.getDate()
+      );
+    }
+
+    // Un jour précis du mois
+    if (note.recurrence_type === "monthly_weekday") {
+      const monthsDiff =
+        (date.getFullYear() - originalDate.getFullYear()) * 12 +
+        (date.getMonth() - originalDate.getMonth());
+
+      if (
+        monthsDiff < 0 ||
+        monthsDiff % (note.recurrence_interval || 1) !== 0
+      ) {
+        return false;
+      }
+
+      // Même jour de la semaine
+      if (date.getDay() !== note.recurrence_day) {
+        return false;
+      }
+
+      // Numéro de semaine dans le mois
+      const weekNumber = Math.ceil(date.getDate() / 7);
+
+      return weekNumber === note.recurrence_week;
+    }
+
+    return false;
+  });
+}
+
+function renderPlanningNote(dayInfo) {
+
+  const dateKey =
+    `${dayInfo.date.getFullYear()}-` +
+    `${String(dayInfo.date.getMonth() + 1).padStart(2, "0")}-` +
+    `${String(dayInfo.date.getDate()).padStart(2, "0")}`;
+
+  const notes = getPlanningNotesForDate(dayInfo.date);
+
+  // Aucune note
+  if (notes.length === 0) {
+    return `
+      <button
+        class="planning-note-add"
+        data-add-note="${dateKey}"
+        title="Ajouter une note"
+        aria-label="Ajouter une note"
+      >
+        📝
+      </button>
+    `;
+  }
+
+  // Une ou plusieurs notes
+  return `
+  <div class="planning-notes">
+
+    ${notes.map(note => `
+      <div class="planning-note" data-note-id="${note.id}">
+
+        <span class="planning-note-text">
+          ${note.note}
+        </span>
+
+        <button
+          class="planning-note-delete"
+          data-delete-note="${note.id}"
+          aria-label="Supprimer la note"
+        >
+          ×
+        </button>
+
+      </div>
+    `).join("")}
+
+    <button
+      class="planning-note-add"
+      data-add-note="${dateKey}"
+      title="Ajouter une note"
+      aria-label="Ajouter une note"
+    >
+      📝
+    </button>
+
+  </div>
+`;
+}
 
 function renderWeek() {
   updateWeekTitle();
@@ -1400,6 +1556,9 @@ function renderWeek() {
       </header>
 
       ${["lunch", "dinner"].map(slot => renderSlot(day, slot)).join("")}
+
+      ${renderPlanningNote(dayInfo)}
+
     </article>
   `).join("");
 
@@ -1874,14 +2033,14 @@ function renderCategoryChips(container, selectedCategories = []) {
 
   container.innerHTML = getAllCategories()
     .map(category => `
-  <button
-type = "button"
-class="chip"
-aria - pressed="${selectedCategories.includes(category.id)}"
-data - category - id="${category.id}" >
-  ${category.icon} ${category.label}
-            </button>
-  `)
+      <button
+        type="button"
+        class="chip"
+        aria-pressed="${selectedCategories.includes(category.id)}"
+        data-category-id="${category.id}">
+        ${category.icon} ${category.label}
+      </button>
+    `)
     .join("");
 
   container
@@ -1901,8 +2060,6 @@ data - category - id="${category.id}" >
       });
 
     });
-
-  // Les événements viendront ici
 }
 
 function openModal(type, payload = {}) {
@@ -2268,8 +2425,109 @@ function openModal(type, payload = {}) {
       </label>
     </div>
 `;
-  }
-  else if (type === "shopping") {
+
+  } else if (type === "planning-note") {
+
+    const date = payload.date || "";
+
+    eyebrow.textContent = "NOTE DU JOUR";
+    title.textContent = "Ajouter une note";
+
+    fields.innerHTML = `
+    <div class="field">
+      <label>Note</label>
+      <input
+        name="note"
+        required
+        placeholder="Ex. Anniversaire Juline"
+      >
+    </div>
+
+    <div class="field">
+      <label>Date</label>
+      <input
+        name="date"
+        type="date"
+        value="${date}"
+        required
+      >
+    </div>
+
+    <div class="field">
+      <label>
+        <input
+          type="checkbox"
+          name="recurring"
+          id="planningNoteRecurring"
+        >
+        Récurrente
+      </label>
+    </div>
+
+    <div id="recurrenceOptions" hidden>
+
+      <div class="field">
+        <label>Répéter</label>
+
+        <select name="recurrence_type" id="recurrenceType">
+          <option value="yearly">Tous les ans</option>
+          <option value="weekly">Toutes les semaines</option>
+          <option value="monthly_day">Tous les mois à la même date</option>
+          <option value="monthly_weekday">Un jour précis du mois</option>
+        </select>
+      </div>
+
+      <div class="field" id="recurrenceIntervalField">
+        <label>Intervalle</label>
+        <input
+          name="recurrence_interval"
+          type="number"
+          min="1"
+          value="1"
+        >
+      </div>
+
+      <div class="field" id="recurrenceWeekField" hidden>
+        <label>Numéro dans le mois</label>
+
+        <select name="recurrence_week">
+          <option value="1">1er</option>
+          <option value="2">2ème</option>
+          <option value="3">3ème</option>
+          <option value="4">4ème</option>
+          <option value="5">5ème</option>
+        </select>
+      </div>
+
+    </div>
+  `;
+
+    const recurringCheckbox = fields.querySelector(
+      "#planningNoteRecurring"
+    );
+
+    const recurrenceOptions = fields.querySelector(
+      "#recurrenceOptions"
+    );
+
+    const recurrenceType = fields.querySelector(
+      "#recurrenceType"
+    );
+
+    const recurrenceWeekField = fields.querySelector(
+      "#recurrenceWeekField"
+    );
+
+    recurringCheckbox.addEventListener("change", () => {
+      recurrenceOptions.hidden = !recurringCheckbox.checked;
+    });
+
+    recurrenceType.addEventListener("change", () => {
+      recurrenceWeekField.hidden =
+        recurrenceType.value !== "monthly_weekday";
+    });
+
+  } else if (type === "shopping") {
     eyebrow.textContent = "LISTE DE COURSES"; title.textContent = "Ajouter un article";
     fields.innerHTML = `<div class="field" ><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
@@ -2366,7 +2624,10 @@ function updateWeekSummary() {
   Object.values(state.meals).forEach(meal => {
     if (!meal) return;
 
-    // Ancien format : l'ID de la recette est stocké directement
+    // ==================================================
+    // ANCIEN FORMAT : l'ID de la recette est stocké
+    // directement
+    // ==================================================
     if (typeof meal !== "object") {
       const recipe = state.recipes.find(
         r => String(r.id) === String(meal)
@@ -2385,35 +2646,60 @@ function updateWeekSummary() {
       return;
     }
 
-    // Repas libre
+    // ==================================================
+    // REPAS LIBRE
+    // ==================================================
     if (meal.type === "free") {
       plannedMeals++;
       return;
     }
 
-    // Occasion
+    // ==================================================
+    // OCCASION
+    // ==================================================
     if (meal.type === "occasion") {
       occasions++;
       return;
     }
 
-    // Recette
+    // ==================================================
+    // RECETTE — NOUVEAU FORMAT : recipeIds[]
+    // ==================================================
     if (meal.type === "recipe") {
-      const recipe = state.recipes.find(
-        r => String(r.id) === String(meal.recipeId)
-      );
 
-      if (!recipe) return;
+      const recipeIds = Array.isArray(meal.recipeIds)
+        ? meal.recipeIds
+        : meal.recipeId
+          ? [meal.recipeId]
+          : [];
 
+      if (recipeIds.length === 0) return;
+
+      // Le créneau constitue 1 repas planifié
       plannedMeals++;
 
-      if (recipe.vegetarian) {
-        vegetarians++;
-      }
+      recipeIds.forEach(recipeId => {
 
-      totalMinutes += getTotalTime(recipe) || 0;
+        const recipe = state.recipes.find(
+          r => String(r.id) === String(recipeId)
+        );
+
+        if (!recipe) return;
+
+        if (recipe.vegetarian) {
+          vegetarians++;
+        }
+
+        totalMinutes += getTotalTime(recipe) || 0;
+      });
+
+      return;
     }
   });
+
+  // ==================================================
+  // TEMPS TOTAL DE CUISINE
+  // ==================================================
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -2422,7 +2708,8 @@ function updateWeekSummary() {
 
   if (totalMinutes > 0) {
     if (hours > 0 && minutes > 0) {
-      cookingText = `environ ${hours} h ${minutes.toString().padStart(2, "0")}`;
+      cookingText =
+        `environ ${hours} h ${minutes.toString().padStart(2, "0")}`;
     } else if (hours > 0) {
       cookingText = `environ ${hours} h`;
     } else {
@@ -2430,12 +2717,18 @@ function updateWeekSummary() {
     }
   }
 
+  // ==================================================
+  // TEXTE DU BANDEAU
+  // ==================================================
+
   const parts = [
     `${plannedMeals} repas planifié${plannedMeals > 1 ? "s" : ""}`
   ];
 
   if (occasions > 0) {
-    parts.push(`${occasions} occasion${occasions > 1 ? "s" : ""}`);
+    parts.push(
+      `${occasions} occasion${occasions > 1 ? "s" : ""}`
+    );
   }
 
   if (vegetarians > 0) {
@@ -2621,8 +2914,45 @@ $("#modalForm").addEventListener("submit", async e => {
     };
 
     showToast(`✅ ${payload.recipe.name} planifiée • ${slotLabel[data.slot]} `);
-  }
-  else if (type === "shopping") {
+
+  } else if (type === "planning-note") {
+
+    const noteDate = data.date;
+
+    const note = await savePlanningNote({
+      note: data.note.trim(),
+      date: noteDate,
+      recurring: data.recurring === "on",
+      recurrence_type:
+        data.recurring === "on"
+          ? data.recurrence_type
+          : null,
+      recurrence_interval:
+        data.recurring === "on"
+          ? Number(data.recurrence_interval || 1)
+          : 1,
+      recurrence_day:
+        data.recurring === "on"
+          ? (
+            data.recurrence_type === "monthly_day"
+              ? new Date(`${noteDate}T12:00:00`).getDate()
+              : new Date(`${noteDate}T12:00:00`).getDay()
+          )
+          : null,
+      recurrence_week:
+        data.recurring === "on" &&
+          data.recurrence_type === "monthly_weekday"
+          ? Number(data.recurrence_week)
+          : null
+    });
+
+    planningNotes.push(note);
+
+    renderWeek();
+
+    showToast("📝 Note ajoutée");
+
+  } else if (type === "shopping") {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
   } else {
     state.fridge.push({ id: Date.now(), name: data.name, qty: data.qty, expiry: data.expiry, soon: false, emoji: "🥬" }); renderFridge(); showToast("Aliment rangé dans le frigo");
@@ -2731,7 +3061,47 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
+  const addNote = e.target.closest("[data-add-note]");
 
+  if (addNote) {
+
+    const date = addNote.dataset.addNote;
+
+    openModal("planning-note", {
+      date: date
+    });
+
+    return;
+  }
+
+  const deleteNote = e.target.closest("[data-delete-note]");
+
+  if (deleteNote) {
+    const noteId = deleteNote.dataset.deleteNote;
+
+    if (!confirm("Supprimer cette note ?")) {
+      return;
+    }
+
+    try {
+      await deletePlanningNote(noteId);
+
+      // Supprime immédiatement la note affichée à l'écran
+      const noteElement = deleteNote.closest(".planning-note");
+
+      if (noteElement) {
+        noteElement.remove();
+      }
+
+      showToast("Note supprimée");
+
+    } catch (error) {
+      console.error("❌ Erreur suppression note :", error);
+      showToast("Impossible de supprimer la note");
+    }
+
+    return;
+  }
 
   const nav = e.target.closest("[data-view], [data-view-link]");
   // Ouvrir la fiche recette depuis le planning
@@ -3135,7 +3505,11 @@ async function initializeApp() {
 
   await loadPlanningFromSupabase();
 
+  // 📝 Chargement des notes du planning
+  planningNotes = await getPlanningNotes();
+
   renderWeek();
+
   renderRecipes();
   renderShopping();
   renderFridge();
@@ -3143,9 +3517,5 @@ async function initializeApp() {
 }
 
 initializeApp();
-
-
-
-
 
 

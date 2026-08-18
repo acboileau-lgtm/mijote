@@ -2419,3 +2419,88 @@ dialog form {
 .add-second-recipe:hover {
     transform: scale(1.15);
 }
+
+/* Note existante */
+.planning-note {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+
+    width: 100%;
+    margin: 5px auto 0;
+
+    text-align: center;
+}
+
+
+/* Texte de la note */
+.planning-note-text {
+    display: block;
+
+    max-width: 90%;
+
+    text-align: center;
+
+    font-size: 0.82rem;
+    line-height: 1.25;
+
+    color: #555;
+}
+
+
+/* Bouton supprimer */
+.planning-note-delete {
+    flex: 0 0 auto;
+
+    border: none;
+    background: transparent;
+    padding: 0;
+
+    font-size: 0.8rem;
+    line-height: 1;
+
+    color: #999;
+    cursor: pointer;
+
+    transition:
+        color 0.2s,
+        background-color 0.2s;
+}
+
+.planning-note-delete:hover {
+    color: #c0392b;
+}
+
+/* Icône "ajouter une note" */
+.planning-note-add {
+    display: block;
+    margin: 4px auto 0;
+
+    border: 0;
+    outline: none;
+    box-shadow: none;
+
+    background: transparent;
+    padding: 0;
+
+    font-size: 1.2rem;
+    line-height: 1;
+
+    cursor: pointer;
+
+    opacity: 0.65;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.planning-note-add:hover {
+    opacity: 1;
+    transform: scale(1.1);
+
+    .planning-note-add:focus,
+    .planning-note-add:focus-visible {
+        outline: none;
+        box-shadow: none;
+    }
+
+}
