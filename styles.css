@@ -2504,3 +2504,740 @@ dialog form {
     }
 
 }
+
+/* =========================================================
+   PDF A4 — PLANNING HEBDOMADAIRE
+   ========================================================= */
+
+.print-footer {
+    display: none;
+}
+
+@media print {
+
+    /* Format papier */
+    @page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
+
+    /* Fond général */
+    html,
+    body,
+    .app-shell,
+    main,
+    .view,
+    #planning,
+    .week-horizontal-scroll,
+    .week-horizontal-content {
+        background: #fff !important;
+    }
+
+
+    /* On enlève toute l'interface de l'application */
+    .sidebar,
+    .mobile-header,
+    .mobile-nav,
+    .week-toolbar,
+    .today-card,
+    .bottom-card,
+    #toast,
+    .print-footer~* {
+        display: none !important;
+    }
+
+    /* Le planning devient la page entière */
+    .app-shell {
+        display: block;
+        min-height: auto;
+    }
+
+    main {
+        width: 100%;
+    }
+
+    #planning {
+        display: block !important;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        animation: none;
+    }
+
+    /* -----------------------------------------------------
+       EN-TÊTE
+       ----------------------------------------------------- */
+
+    .page-heading {
+        display: block;
+        margin: 0 0 4mm;
+        padding: 0;
+    }
+
+    .page-heading>div {
+        width: 100%;
+    }
+
+    .page-heading .eyebrow {
+        margin: 0 0 2mm;
+        font-size: 10pt;
+        letter-spacing: .15em;
+        color: #a27a51 !important;
+    }
+
+    .page-heading h1 {
+        margin: 0;
+        font-size: 30pt;
+        line-height: 1;
+        letter-spacing: -.035em;
+        color: #233128 !important;
+    }
+
+    /* On enlève le petit texte sous le titre */
+    .page-heading p:last-child {
+        display: none;
+    }
+
+    /* -----------------------------------------------------
+       MÉTÉO
+       ----------------------------------------------------- */
+
+    .week-horizontal-scroll {
+        width: 100%;
+        overflow: visible !important;
+        padding: 0;
+    }
+
+    .week-horizontal-content {
+        width: 100%;
+    }
+
+    .weather-strip {
+        width: 100%;
+        margin: 0 0 5mm;
+    }
+
+    .weather-heading {
+        margin: 0 0 2mm;
+    }
+
+    .weather-heading h3 {
+        margin: 0;
+        font-size: 13pt;
+    }
+
+    .weather-heading p {
+        margin: 1mm 0 0;
+        font-size: 8pt;
+    }
+
+    .weather-cards {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 2.5mm !important;
+        width: 100% !important;
+    }
+
+    .weather-card {
+        min-height: 30mm;
+        padding: 2mm 1.5mm;
+        border-radius: 3mm;
+        gap: 1mm;
+    }
+
+    .weather-day strong {
+        font-size: 7pt;
+    }
+
+    .weather-day span {
+        font-size: 8pt;
+    }
+
+    .weather-icon {
+        font-size: 21pt;
+        margin: 1mm 0;
+    }
+
+    .weather-temperatures {
+        font-size: 8pt;
+    }
+
+    .weather-temperatures strong {
+        font-size: 9pt;
+    }
+
+    .weather-wind {
+        font-size: 6.5pt;
+    }
+
+    /* -----------------------------------------------------
+       PLANNING — 7 COLONNES
+       ----------------------------------------------------- */
+
+    .week-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 2.5mm !important;
+        width: 100% !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .day-column {
+        min-width: 0;
+    }
+
+    .day-header {
+        padding: 1mm 1mm 2mm;
+    }
+
+    .day-header strong {
+        font-size: 7pt;
+    }
+
+    .day-header span {
+        width: 6mm;
+        height: 6mm;
+        margin-top: 1mm;
+        font-size: 9pt;
+    }
+
+    /* -----------------------------------------------------
+       REPAS
+       ----------------------------------------------------- */
+
+    .meal-slot {
+        min-height: 39mm;
+        padding: 2mm;
+        border-radius: 2mm;
+    }
+
+    .meal-slot.dinner {
+        border-top: 0;
+    }
+
+    .slot-label {
+        font-size: 6.5pt;
+    }
+
+    .meal-card {
+        min-height: 31mm;
+        margin-top: 1.5mm;
+        padding: 2.5mm;
+        border-radius: 2mm;
+    }
+
+    .meal-card strong {
+        font-size: 9pt;
+        line-height: 1.12;
+    }
+
+    .meal-card small {
+        font-size: 6.5pt;
+    }
+
+    /* Pas de boutons d'interaction sur le PDF */
+    .remove-meal,
+    .add-meal,
+    .add-second-recipe {
+        display: none !important;
+    }
+
+    /* -----------------------------------------------------
+       NOTES
+       ----------------------------------------------------- */
+
+    .planning-notes {
+        margin-top: 1.5mm;
+        padding: 1.5mm 1mm;
+        min-height: 10mm;
+        border-radius: 2mm;
+        background: rgba(255, 253, 248, .75);
+    }
+
+    .planning-note {
+        justify-content: flex-start;
+        gap: 1mm;
+        margin: 1mm 0;
+        text-align: left;
+    }
+
+    .planning-note-text {
+        max-width: 100%;
+        font-size: 7pt;
+        line-height: 1.2;
+        text-align: left;
+        color: #555 !important;
+    }
+
+    /* On garde les notes mais pas les boutons */
+    .planning-note-delete,
+    .planning-note-add {
+        display: none !important;
+    }
+
+    /* =========================================================
+   IMPRESSION / PDF A4 - PLANNING HEBDOMADAIRE
+   ========================================================= */
+
+    .print-footer {
+        display: none;
+    }
+
+    @media print {
+
+        /* -----------------------------------------------------
+       PAGE
+       ----------------------------------------------------- */
+
+        @page {
+            size: A4 landscape;
+            margin: 6mm;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--cream) !important;
+            color: var(--ink);
+        }
+
+        body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* -----------------------------------------------------
+       CACHER L'INTERFACE
+       ----------------------------------------------------- */
+
+        .sidebar,
+        .mobile-header,
+        .mobile-nav,
+        .week-toolbar,
+        .today-card,
+        .bottom-card,
+        #toast,
+        #autoPlan {
+            display: none !important;
+        }
+
+        /* -----------------------------------------------------
+       CONTENEUR PRINCIPAL
+       ----------------------------------------------------- */
+
+        .app-shell {
+            display: block !important;
+            min-height: 0 !important;
+        }
+
+        main {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .view {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            animation: none !important;
+        }
+
+        /* Ne jamais imprimer les autres vues */
+        .view:not(#planning) {
+            display: none !important;
+        }
+
+        #planning {
+            display: block !important;
+        }
+
+        /* -----------------------------------------------------
+       TITRE
+       ----------------------------------------------------- */
+
+        .page-heading {
+            display: block !important;
+            margin: 0 0 3mm !important;
+            padding: 0 !important;
+        }
+
+        .page-heading>div {
+            width: 100%;
+        }
+
+        .page-heading .eyebrow {
+            margin: 0 0 1.5mm !important;
+            font-size: 9pt !important;
+            line-height: 1 !important;
+            letter-spacing: .15em;
+            color: #a27a51 !important;
+        }
+
+        .page-heading h1 {
+            margin: 0 !important;
+            font-size: 28pt !important;
+            line-height: 1 !important;
+            letter-spacing: -.035em;
+            color: #233128 !important;
+        }
+
+        /* Phrase sous le titre */
+        .page-heading p:last-of-type {
+            display: none !important;
+        }
+
+        /* -----------------------------------------------------
+       MÉTÉO
+       ----------------------------------------------------- */
+
+        .week-horizontal-scroll {
+            width: 100% !important;
+            overflow: visible !important;
+            padding: 0 !important;
+        }
+
+        .week-horizontal-content {
+            width: 100% !important;
+        }
+
+        .weather-strip {
+            width: 100% !important;
+            margin: 0 0 3mm !important;
+        }
+
+        .weather-heading {
+            margin: 0 0 1.5mm !important;
+        }
+
+        .weather-heading h3 {
+            margin: 0 !important;
+            font-size: 11pt !important;
+        }
+
+        .weather-heading p {
+            margin: 1mm 0 0 !important;
+            font-size: 7pt !important;
+        }
+
+        .weather-cards {
+            display: grid !important;
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+            gap: 2mm !important;
+            width: 100% !important;
+        }
+
+        .weather-card {
+            width: auto !important;
+            min-height: 25mm !important;
+            padding: 1.5mm !important;
+            border-radius: 2.5mm !important;
+            box-sizing: border-box;
+        }
+
+        .weather-day strong {
+            font-size: 6.5pt !important;
+        }
+
+        .weather-day span {
+            font-size: 7pt !important;
+        }
+
+        .weather-icon {
+            font-size: 17pt !important;
+            margin: .5mm 0 !important;
+        }
+
+        .weather-temperatures {
+            font-size: 7pt !important;
+        }
+
+        .weather-temperatures strong {
+            font-size: 8pt !important;
+        }
+
+        .weather-wind {
+            font-size: 6pt !important;
+        }
+
+        /* -----------------------------------------------------
+       PLANNING
+       ----------------------------------------------------- */
+
+        .week-grid {
+            display: grid !important;
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+            gap: 2mm !important;
+            width: 100% !important;
+            padding: 0 !important;
+            overflow: visible !important;
+        }
+
+        /* IMPORTANT :
+       chaque colonne devient une vraie colonne verticale.
+       Les notes restent donc directement sous le dîner. */
+        .day-column {
+            display: flex !important;
+            flex-direction: column !important;
+            min-width: 0 !important;
+            height: auto !important;
+            align-items: stretch !important;
+        }
+
+        .day-header {
+            flex: 0 0 auto !important;
+            padding: 1mm 1mm 1.5mm !important;
+        }
+
+        .day-header strong {
+            font-size: 6.5pt !important;
+        }
+
+        .day-header span {
+            width: 5mm !important;
+            height: 5mm !important;
+            margin-top: .5mm !important;
+            font-size: 7.5pt !important;
+        }
+
+        /* -----------------------------------------------------
+       REPAS
+       ----------------------------------------------------- */
+
+        .meal-slot {
+            flex: 0 0 auto !important;
+            min-height: 0 !important;
+            height: 35mm !important;
+            padding: 1.5mm !important;
+            box-sizing: border-box;
+            border-radius: 2mm !important;
+        }
+
+        .meal-slot.lunch {
+            border-radius: 2mm 2mm 0 0 !important;
+        }
+
+        .meal-slot.dinner {
+            border-radius: 0 0 2mm 2mm !important;
+            border-top: 0 !important;
+        }
+
+        .slot-label {
+            font-size: 5.5pt !important;
+        }
+
+        .meal-card {
+            min-height: 0 !important;
+            height: 28mm !important;
+            margin-top: 1mm !important;
+            padding: 2mm !important;
+            border-radius: 1.5mm !important;
+            box-sizing: border-box;
+        }
+
+        .meal-card strong {
+            font-size: 8pt !important;
+            line-height: 1.1 !important;
+        }
+
+        .meal-card small {
+            font-size: 5.5pt !important;
+            line-height: 1.15 !important;
+        }
+
+        /* Masquer les éléments interactifs */
+        .remove-meal,
+        .add-meal,
+        .add-second-recipe {
+            display: none !important;
+        }
+
+        /* -----------------------------------------------------
+   NOTES — STYLE "PENSE-BÊTE ÉPINGLÉ"
+   ----------------------------------------------------- */
+
+        .planning-notes {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+
+            margin: 3mm 1mm 0 !important;
+            padding: 0 !important;
+
+            background: transparent !important;
+            border: 0 !important;
+
+            min-height: 0 !important;
+        }
+
+        .planning-note {
+            position: relative !important;
+
+            display: block !important;
+
+            width: 100% !important;
+            min-height: 19mm !important;
+
+            margin: 0 !important;
+            padding: 7mm 3mm 3mm !important;
+
+            background: #fff7df !important;
+            border: 1px solid #eadfbe !important;
+
+            color: #45413a !important;
+
+            text-align: left !important;
+
+            /* effet papier */
+            box-shadow:
+                0 1.5mm 2.5mm rgba(70, 60, 40, .18),
+                0 .4mm .8mm rgba(70, 60, 40, .08) !important;
+
+            transform: rotate(-0.5deg);
+
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+
+        /* Petit coin replié en bas à droite */
+        .planning-note::after {
+            content: "";
+            position: absolute;
+
+            right: 0;
+            bottom: 0;
+
+            width: 7mm;
+            height: 7mm;
+
+            background:
+                linear-gradient(135deg,
+                    transparent 49%,
+                    #e9dfc3 50%);
+        }
+
+        /* Trombone */
+        .planning-note::before {
+            content: "📎";
+
+            position: absolute;
+
+            left: 2mm;
+            top: -5mm;
+
+            font-size: 10mm;
+            line-height: 1;
+
+            transform: rotate(-8deg);
+
+            z-index: 2;
+        }
+
+        /* Texte */
+        .planning-note-text {
+            display: block !important;
+
+            width: 100% !important;
+            max-width: 100% !important;
+
+            margin: 0 !important;
+            padding: 0 !important;
+
+            font-size: 7pt !important;
+            line-height: 1.25 !important;
+
+            text-align: left !important;
+            color: #45413a !important;
+        }
+
+        /* Pas de boutons dans le PDF */
+        .planning-note-delete,
+        .planning-note-add {
+            display: none !important;
+        }
+
+        /* -----------------------------------------------------
+       PIED DE PAGE MIJOTÉ
+       ----------------------------------------------------- */
+
+        .print-footer {
+            display: flex !important;
+
+            position: fixed !important;
+            left: 50% !important;
+            bottom: 1mm !important;
+
+            transform: translateX(-50%) !important;
+
+            align-items: center;
+            justify-content: center;
+            gap: 1.5mm;
+
+            width: fit-content;
+            margin: 0 !important;
+            padding: 1.5mm 4mm;
+
+            background: #f0ecdf !important;
+            color: var(--forest) !important;
+
+            font-size: 10pt;
+            font-weight: 700;
+
+            z-index: 100;
+        }
+
+        .print-footer-mark {
+            display: grid;
+            place-items: center;
+
+            width: 6mm;
+            height: 6mm;
+
+            border-radius: 50%;
+            background: var(--forest) !important;
+            color: white !important;
+
+            font-size: 7pt;
+            font-weight: 700;
+        }
+
+        /* -----------------------------------------------------
+       ÉVITER LES COUPURES
+       ----------------------------------------------------- */
+
+        .page-heading,
+        .weather-strip,
+        .weather-card,
+        .week-grid,
+        .day-column,
+        .meal-slot,
+        .planning-notes,
+        .print-footer {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
+    }
+
+    @media print {
+
+        html,
+        body {
+            background: #fff !important;
+        }
+
+        .app-shell,
+        main,
+        .view,
+        #planning,
+        .week-horizontal-scroll,
+        .week-horizontal-content {
+            background: #fff !important;
+        }
+    }

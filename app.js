@@ -249,18 +249,18 @@ openImportModal.addEventListener("click", () => {
   importRecipeText.value = "";
   importRecipeUrl.value = "";
 
-  // Revient toujours sur le mode Texte
-  importTextMode.classList.add("active");
-  importLinkMode.classList.remove("active");
+  // Revient toujours sur le mode Lien
+  importLinkMode.classList.add("active");
+  importTextMode.classList.remove("active");
 
-  importTextSection.classList.remove("hidden");
-  importLinkSection.classList.add("hidden");
+  importLinkSection.classList.remove("hidden");
+  importTextSection.classList.add("hidden");
 
   // Ouvre la fenêtre
   importModal.classList.remove("hidden");
 
   requestAnimationFrame(() => {
-    importRecipeText.focus();
+    importRecipeUrl.focus();
   });
 
   console.log(importModal);
@@ -1633,10 +1633,16 @@ function updateTodayDate() {
       ) || null;
     }
 
-    // Nouveau format : la recette est référencée par recipeId
+    // Nouveau format : une ou plusieurs recettes
     if (meal.type === "recipe") {
+      const recipeIds = Array.isArray(meal.recipeIds)
+        ? meal.recipeIds
+        : meal.recipeId
+          ? [meal.recipeId]
+          : [];
+
       return state.recipes.find(
-        r => String(r.id) === String(meal.recipeId)
+        r => String(r.id) === String(recipeIds[0])
       ) || null;
     }
 
@@ -2342,6 +2348,11 @@ function openModal(type, payload = {}) {
       if (mealType.value === "occasion") {
         mealTextLabel.textContent = "Nom de l'occasion";
         mealName.placeholder = "Ex. Repas chez les frangins";
+      }
+    });
+    requestAnimationFrame(() => {
+      if (mealType.value === "recipe") {
+        mealRecipeSearch.focus();
       }
     });
   }
@@ -3361,6 +3372,9 @@ $("#addShopping").addEventListener("click", () => openModal("shopping"));
 $("#addFridge").addEventListener("click", () => openModal("fridge"));
 $("#uncheckAll").addEventListener("click", () => { state.shopping.forEach(i => i.checked = false); save(); renderShopping(); });
 $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); renderWeek(); showToast("La semaine est prête à être recomposée"); });
+$("#printWeek").addEventListener("click", () => {
+  window.print();
+});
 
 function completeWeek(options) {
   let candidates = [...state.recipes];
