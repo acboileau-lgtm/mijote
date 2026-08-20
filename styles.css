@@ -3241,3 +3241,106 @@ dialog form {
             background: #fff !important;
         }
     }
+}
+
+/* =========================================================
+   INGRÉDIENTS STRUCTURÉS
+   ========================================================= */
+
+.ingredient-row {
+    display: grid;
+    grid-template-columns: 90px 145px minmax(220px, 1fr) 190px 42px;
+    gap: 8px;
+    align-items: center;
+
+    margin-bottom: 10px;
+    padding: 10px;
+
+    background: #faf9f5;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.ingredient-row input,
+.ingredient-row select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.ingredient-quantity {
+    text-align: center;
+}
+
+.ingredient-name {
+    min-width: 0;
+}
+
+.ingredient-category {
+    min-width: 0;
+}
+
+.ingredient-row .remove-ingredient {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+}
+
+/* En-tête des colonnes */
+.ingredients-header {
+    display: grid;
+    grid-template-columns: 90px 145px minmax(220px, 1fr) 190px 42px;
+    gap: 8px;
+
+    margin: 0 10px 6px;
+    padding: 0 10px;
+
+    font-size: 12px;
+    font-weight: 700;
+    color: #8d877d;
+}
+
+.ingredients-header span:nth-child(1) {
+    text-align: center;
+}
+
+@media (max-width: 700px) {
+
+    .ingredients-header {
+        display: none;
+    }
+
+    .ingredient-row {
+        grid-template-columns: 80px 1fr 42px;
+        grid-template-areas:
+            "quantity unit delete"
+            "name name name"
+            "category category category";
+
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .ingredient-quantity {
+        grid-area: quantity;
+    }
+
+    .ingredient-unit {
+        grid-area: unit;
+    }
+
+    .ingredient-name {
+        grid-area: name;
+    }
+
+    .ingredient-category {
+        grid-area: category;
+    }
+
+    .ingredient-row .remove-ingredient {
+        grid-area: delete;
+        justify-self: end;
+    }
+}

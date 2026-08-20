@@ -9,6 +9,7 @@ export const RECIPE_CATEGORIES = [
     { id: "pasta", label: "Pâtes", icon: "🍝" },
     { id: "rice", label: "Riz", icon: "🍚" },
     { id: "pizza", label: "Pizza", icon: "🍕" },
+    { id: "cheese", label: "Fromages", icon: "🧀" },
     { id: "soup", label: "Soupe", icon: "🥣" },
     { id: "salad", label: "Salade", icon: "🥗" },
     { id: "dessert", label: "Dessert", icon: "🍰" },

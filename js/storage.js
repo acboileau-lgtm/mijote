@@ -12,6 +12,9 @@ const SUPABASE_KEY = "sb_publishable_KRkKQu-Vcv5sx2XVqvoMxA_ly6m-6Kp";
 const RECIPES_ENDPOINT = `${SUPABASE_URL}/rest/v1/recipes`;
 const PLANNING_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning`;
 const PLANNING_NOTES_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning_notes`;
+const RECIPE_INGREDIENTS_ENDPOINT =
+    `${SUPABASE_URL}/rest/v1/recipe_ingredients`;
+
 
 // ======================================================
 // HEADERS SUPABASE
@@ -227,6 +230,10 @@ async function saveRecipeToDB(recipe) {
         "✅ Recette sauvegardée dans Supabase :",
         recipe.name
     );
+    await saveRecipeIngredients(
+        recipe.id,
+        recipe.ingredients ?? []
+    );
 }
 
 
@@ -264,8 +271,23 @@ async function getAllRecipes() {
 
     const rows = await response.json();
 
-    const recipes = rows.map(
-        supabaseToRecipe
+    const recipes = await Promise.all(
+        rows.map(async row => {
+
+            const recipe = supabaseToRecipe(row);
+
+            const ingredients =
+                await getRecipeIngredients(recipe.id);
+
+            recipe.ingredients = ingredients.map(item => ({
+                quantity: item.quantity,
+                unit: item.unit,
+                ingredient: item.ingredient,
+                category: item.category
+            }));
+
+            return recipe;
+        })
     );
 
     console.log(
@@ -319,6 +341,132 @@ async function deleteRecipeFromDB(id) {
     );
 }
 
+// ======================================================
+// INGRÉDIENTS STRUCTURÉS
+// ======================================================
+
+async function getRecipeIngredients(recipeId) {
+
+    const response = await fetch(
+        `${RECIPE_INGREDIENTS_ENDPOINT}?recipe_id=eq.${encodeURIComponent(recipeId)}&select=*&order=position.asc`,
+        {
+            method: "GET",
+            headers: getHeaders()
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur lecture ingrédients Supabase :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de charger les ingrédients (${response.status})`
+        );
+    }
+
+    return await response.json();
+}
+
+
+async function saveRecipeIngredients(recipeId, ingredients) {
+
+    // Supprime les anciennes lignes
+    const deleteResponse = await fetch(
+        `${RECIPE_INGREDIENTS_ENDPOINT}?recipe_id=eq.${encodeURIComponent(recipeId)}`,
+        {
+            method: "DELETE",
+            headers: getHeaders({
+                "Prefer": "return=minimal"
+            })
+        }
+    );
+
+    if (!deleteResponse.ok) {
+        const errorText = await deleteResponse.text();
+
+        console.error(
+            "❌ Erreur suppression anciens ingrédients :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de remplacer les ingrédients (${deleteResponse.status})`
+        );
+    }
+
+    if (!ingredients?.length) {
+        return;
+    }
+
+    const rows = ingredients.map((ingredient, index) => ({
+        recipe_id: recipeId,
+        position: index,
+        quantity: ingredient.quantity ?? null,
+        unit: ingredient.unit ?? null,
+        ingredient: ingredient.ingredient ?? "",
+        category: ingredient.category ?? null
+    }));
+
+    const response = await fetch(
+        RECIPE_INGREDIENTS_ENDPOINT,
+        {
+            method: "POST",
+            headers: getHeaders({
+                "Prefer": "return=minimal"
+            }),
+            body: JSON.stringify(rows)
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur sauvegarde ingrédients Supabase :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de sauvegarder les ingrédients (${response.status})`
+        );
+    }
+
+    console.log(
+        "✅ Ingrédients structurés sauvegardés :",
+        ingredients.length
+    );
+}
+
+
+async function deleteRecipeIngredients(recipeId) {
+
+    const response = await fetch(
+        `${RECIPE_INGREDIENTS_ENDPOINT}?recipe_id=eq.${encodeURIComponent(recipeId)}`,
+        {
+            method: "DELETE",
+            headers: getHeaders({
+                "Prefer": "return=minimal"
+            })
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur suppression ingrédients Supabase :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de supprimer les ingrédients (${response.status})`
+        );
+    }
+}
 
 // ======================================================
 // PLANNING
@@ -618,5 +766,8 @@ export {
     savePlanning,
     getPlanningNotes,
     savePlanningNote,
-    deletePlanningNote
+    deletePlanningNote,
+    getRecipeIngredients,
+    saveRecipeIngredients,
+    deleteRecipeIngredients,
 };

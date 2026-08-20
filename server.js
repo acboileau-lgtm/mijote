@@ -575,27 +575,27 @@ function cleanSuggestedIngredients(
     tips,
     steps
 ) {
-
     if (!Array.isArray(ingredients)) {
-        return [];
+        return {
+            ingredients: [],
+            comments: []
+        };
     }
 
-    if (!Array.isArray(tips) || tips.length === 0) {
-        return ingredients;
-    }
+    const comments = [];
 
     const suggestionText =
         normalizeCategoryText(
-            tips.join(" ")
+            (tips || []).join(" ")
         );
 
     const stepsText =
         normalizeCategoryText(
-            steps.join(" ")
+            (steps || []).join(" ")
         );
 
-
-    // Mots indiquant des alternatives de viande/volaille
+    // Alternatives éventuellement mentionnées
+    // dans les suggestions du site.
     const alternativeTerms = [
         "poulet",
         "dinde",
@@ -614,47 +614,91 @@ function cleanSuggestedIngredients(
         "truite"
     ];
 
-
     const suggestionTerms =
         alternativeTerms.filter(
             term =>
-                suggestionText.includes(term)
+                suggestionText.includes(
+                    normalizeCategoryText(term)
+                )
         );
 
+    const cleanedIngredients = [];
 
-    return ingredients.filter(
-        ingredient => {
+    for (const ingredient of ingredients) {
 
-            const ingredientText =
-                normalizeCategoryText(
-                    ingredient
+        const text = String(
+            ingredient || ""
+        ).trim();
+
+        if (!text) {
+            continue;
+        }
+
+        const normalized =
+            normalizeCategoryText(text);
+
+        // --------------------------------------------------
+        // 1. Commentaires / suggestions manifestes
+        // --------------------------------------------------
+
+        const isComment =
+            /^selon votre gout\b/.test(normalized) ||
+            /^selon vos gouts\b/.test(normalized) ||
+            /^accord mets\b/.test(normalized) ||
+            /^accord vin\b/.test(normalized) ||
+            /^accords mets\b/.test(normalized) ||
+            /^accords vins\b/.test(normalized) ||
+            /\bbouteille(?:s)? de vin\b/.test(normalized) ||
+            /\bvin rouge\b/.test(normalized) ||
+            /\bvin blanc\b/.test(normalized) ||
+            /\bvin rose\b/.test(normalized) ||
+            /\bcreme glacee vanille\b/.test(normalized);
+
+        if (isComment) {
+            comments.push(text);
+            continue;
+        }
+
+        // --------------------------------------------------
+        // 2. Alternatives présentes dans les suggestions
+        //    mais pas dans la préparation réelle
+        // --------------------------------------------------
+
+        let isAlternative = false;
+
+        for (const term of suggestionTerms) {
+
+            const inIngredient =
+                normalized.includes(
+                    normalizeCategoryText(term)
                 );
 
+            const inSteps =
+                stepsText.includes(
+                    normalizeCategoryText(term)
+                );
 
-            for (
-                const term of suggestionTerms
+            if (
+                inIngredient &&
+                !inSteps
             ) {
-
-                const inIngredient =
-                    ingredientText.includes(term);
-
-                const inSteps =
-                    stepsText.includes(term);
-
-                // Présent dans la suggestion
-                // mais pas dans la vraie préparation :
-                // probablement un ingrédient suggéré.
-                if (
-                    inIngredient &&
-                    !inSteps
-                ) {
-                    return false;
-                }
+                isAlternative = true;
+                break;
             }
-
-            return true;
         }
-    );
+
+        if (isAlternative) {
+            comments.push(text);
+            continue;
+        }
+
+        cleanedIngredients.push(text);
+    }
+
+    return {
+        ingredients: cleanedIngredients,
+        comments
+    };
 }
 
 
@@ -1154,22 +1198,28 @@ app.get(
                 );
 
 
-            const ingredients =
+            const cleaned =
                 cleanSuggestedIngredients(
                     rawIngredients,
                     tips,
                     steps
                 );
 
+            const ingredients =
+                cleaned.ingredients;
+
+
+            const noteParts = [
+                ...(tips || []).map(
+                    tip => `Suggestion : ${tip}`
+                ),
+                ...(cleaned.comments || []).map(
+                    comment => `Suggestion : ${comment}`
+                )
+            ];
 
             const notes =
-                tips.length
-                    ? tips
-                        .map(
-                            tip => `Suggestion : ${tip}`
-                        )
-                        .join("\n\n")
-                    : "";
+                noteParts.join("\n\n");
 
 
             // ==========================================

@@ -278,6 +278,218 @@ cancelImport.addEventListener("click", () => {
 
 });
 
+function parseIngredientText(value) {
+  if (!value) {
+    return {
+      quantity: null,
+      unit: null,
+      ingredient: "",
+      category: null
+    };
+  }
+
+  const text = String(value).trim();
+
+  // Déjà structuré : on ne modifie rien
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "ingredient" in value
+  ) {
+    return {
+      quantity: value.quantity ?? null,
+      unit: value.unit ?? null,
+      ingredient: value.ingredient ?? "",
+      category: value.category ?? null
+    };
+  }
+
+  // --------------------------------------------------
+  // Quantité
+  // --------------------------------------------------
+
+  const quantityMatch = text.match(
+    /^(\d+(?:[.,]\d+)?)\s*(.*)$/i
+  );
+
+  let quantity = null;
+  let remainder = text;
+
+  if (quantityMatch) {
+    quantity = Number(
+      quantityMatch[1].replace(",", ".")
+    );
+
+    remainder = quantityMatch[2].trim();
+  }
+
+  // --------------------------------------------------
+  // Unités reconnues
+  // --------------------------------------------------
+
+  const units = [
+    "c. à soupe",
+    "c à soupe",
+    "cuillère à soupe",
+    "cuillères à soupe",
+    "c. à café",
+    "c à café",
+    "cuillère à café",
+    "cuillères à café",
+    "kg",
+    "g",
+    "mg",
+    "l",
+    "cl",
+    "ml",
+    "pièces",
+    "pièce",
+    "tranches",
+    "tranche",
+    "gousses",
+    "gousse",
+    "bottes",
+    "botte",
+    "sachets",
+    "sachet",
+    "pots",
+    "pot",
+    "boîtes",
+    "boîte"
+  ];
+
+  let unit = null;
+  let ingredient = remainder;
+
+  for (const candidate of units) {
+
+    const regex = new RegExp(
+      `^${candidate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b\\s*(.*)$`,
+      "i"
+    );
+
+    const match = remainder.match(regex);
+
+    if (match) {
+      unit = candidate;
+      ingredient = match[1].trim();
+      break;
+    }
+  }
+
+  // --------------------------------------------------
+  // Nettoyage
+  // --------------------------------------------------
+
+  ingredient = ingredient
+    .replace(/^de\s+/i, "")
+    .replace(/^du\s+/i, "")
+    .replace(/^des\s+/i, "")
+    .trim();
+
+  // "pièces" -> "pièce"
+  if (unit === "pièces") unit = "pièce";
+  if (unit === "tranches") unit = "tranche";
+  if (unit === "gousses") unit = "gousse";
+  if (unit === "bottes") unit = "botte";
+  if (unit === "sachets") unit = "sachet";
+  if (unit === "pots") unit = "pot";
+  if (unit === "boîtes") unit = "boîte";
+
+  // --------------------------------------------------
+  // Si quantité sans unité explicite :
+  // on considère qu'il s'agit d'une pièce
+  // --------------------------------------------------
+
+  if (quantity !== null && !unit) {
+    unit = "pièce";
+  }
+
+  // --------------------------------------------------
+  // Détermination prudente du rayon
+  // --------------------------------------------------
+
+  const lower = ingredient.toLowerCase();
+
+  let category = null;
+
+  if (
+    /boeuf|bœuf|veau|porc|jambon|lardon|saucisse|viande|steak/.test(lower)
+  ) {
+    category = "Viandes";
+  } else if (
+    /poulet|dinde|canard|volaille/.test(lower)
+  ) {
+    category = "Viandes";
+  } else if (
+    /cabillaud|saumon|thon|crevette|crevettes|poisson|moule|moules/.test(lower)
+  ) {
+    category = "Poissons";
+  } else if (
+    /feta|mozzarella|parmesan|comté|reblochon|camembert|chèvre|chevre|fromage/.test(lower)
+  ) {
+    category = "Fromages";
+  } else if (
+    /crème|creme|lait|beurre|yaourt|yaourt|mascarpone|œuf|oeuf/.test(lower)
+  ) {
+    category = "Produits frais";
+  } else if (
+    /tomate|tomates|courgette|courgettes|carotte|carottes|oignon|oignons|ail|poivron|poireau|brocoli|champignon|champignons|salade|épinard|epinard|concombre|avocat/.test(lower)
+  ) {
+    category = "Fruits & légumes";
+  } else if (
+    /baguette|pain|bagel|brioche|pâte brisée|pate brisee|pâte feuilletée|pate feuilletee/.test(lower)
+  ) {
+    category = "Boulangerie";
+  } else if (
+    /huile|vinaigre|farine|sucre|sel|poivre|riz|pâtes|pates|coulis|épices|epices|moutarde|bouillon/.test(lower)
+  ) {
+    category = "Épicerie";
+  }
+
+  return {
+    quantity,
+    unit,
+    ingredient,
+    category
+  };
+}
+
+
+function parseImportedIngredients(ingredients) {
+  return (ingredients ?? [])
+    .map(parseIngredientText)
+    .filter(item => item.ingredient);
+}
+
+function extractIngredientsFromTextImport(text) {
+  const lines = String(text)
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const startIndex = lines.findIndex(line =>
+    /^ingrédients?\s*:?\s*$/i.test(line)
+  );
+
+  if (startIndex === -1) {
+    return [];
+  }
+
+  const endIndex = lines.findIndex((line, index) =>
+    index > startIndex &&
+    /^(préparation|preparation|instructions?|étapes?|etapes?)\s*:?\s*$/i.test(line)
+  );
+
+  const ingredientLines = lines.slice(
+    startIndex + 1,
+    endIndex === -1 ? lines.length : endIndex
+  );
+
+  return parseImportedIngredients(ingredientLines);
+}
+
+
 startImport.addEventListener("click", async () => {
 
   // ==================================================
@@ -286,13 +498,18 @@ startImport.addEventListener("click", async () => {
 
   if (!importTextSection.classList.contains("hidden")) {
 
-    const recipe = importRecipe(
-      importRecipeText.value
-    );
+    const rawImportText = importRecipeText.value;
+
+    const recipe = importRecipe(rawImportText);
 
     if (!recipe) {
       return;
     }
+
+    recipe.ingredients = extractIngredientsFromTextImport(
+      rawImportText
+    );
+
 
     // Ferme la fenêtre d'import
     importModal.classList.add("hidden");
@@ -433,11 +650,11 @@ startImport.addEventListener("click", async () => {
           ),
 
         ingredients:
-          Array.isArray(
-            data.ingredients
-          )
-            ? data.ingredients
-            : [],
+          parseImportedIngredients(
+            Array.isArray(data.ingredients)
+              ? data.ingredients
+              : []
+          ),
 
         steps:
           Array.isArray(
@@ -736,10 +953,22 @@ recipeForm.addEventListener("submit", async (event) => {
   // Ingrédients
   // ==========================================
 
-  const ingredients =
-    [...$$(".ingredient-input")]
-      .map(input => input.value.trim())
-      .filter(value => value !== "");
+  const ingredients = [...$$(".ingredient-row")]
+    .map(row => ({
+      quantity: row.querySelector(".ingredient-quantity")?.value
+        ? Number(row.querySelector(".ingredient-quantity").value)
+        : null,
+
+      unit:
+        row.querySelector(".ingredient-unit")?.value || null,
+
+      ingredient:
+        row.querySelector(".ingredient-name")?.value.trim() || "",
+
+      category:
+        row.querySelector(".ingredient-category")?.value || null
+    }))
+    .filter(item => item.ingredient !== "");
 
 
   // ==========================================
@@ -973,38 +1202,99 @@ export async function addRecipe(recipe) {
 
 }
 
-function addIngredientLine(value = "") {
-
+function addIngredientLine(value = {}) {
   const row = document.createElement("div");
   row.className = "ingredient-row";
 
+  const quantity =
+    typeof value === "object" && value !== null
+      ? value.quantity ?? ""
+      : "";
+
+  const unit =
+    typeof value === "object" && value !== null
+      ? value.unit ?? ""
+      : "";
+
+  const ingredient =
+    typeof value === "object" && value !== null
+      ? value.ingredient ?? ""
+      : typeof value === "string"
+        ? value
+        : "";
+
+  const category =
+    typeof value === "object" && value !== null
+      ? value.category ?? ""
+      : "";
+
   row.innerHTML = `
         <input
-            type="text"
-            class="ingredient-input"
-            placeholder="Ex : 500 g de farine"
-            value="${value}"
+            type="number"
+            class="ingredient-quantity"
+            placeholder="Qté"
+            min="0"
+            step="0.01"
+            value="${quantity}"
         >
+
+        <select class="ingredient-unit">
+            <option value="">Unité</option>
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+            <option value="ml">ml</option>
+            <option value="cl">cl</option>
+            <option value="l">l</option>
+            <option value="pièce">pièce</option>
+            <option value="tranche">tranche</option>
+            <option value="gousse">gousse</option>
+            <option value="botte">botte</option>
+            <option value="c. à café">c. à café</option>
+            <option value="c. à soupe">c. à soupe</option>
+            <option value="pincée">pincée</option>
+            <option value="à volonté">à volonté</option>
+        </select>
+
+        <input
+            type="text"
+            class="ingredient-name"
+            placeholder="Ex. farine"
+            value="${String(ingredient).replace(/"/g, "&quot;")}"
+        >
+
+        <select class="ingredient-category">
+            <option value="">Rayon</option>
+            <option value="Fruits & légumes">🥕 Fruits & légumes</option>
+            <option value="Viandes">🥩 Viandes</option>
+            <option value="Poissons">🐟 Poissons</option>
+            <option value="Fromages">🧀 Fromages</option>
+            <option value="Produits frais">🥛 Produits frais</option>
+            <option value="Épicerie">🥫 Épicerie</option>
+            <option value="Boulangerie">🍞 Boulangerie</option>
+            <option value="Surgelés">🧊 Surgelés</option>
+            <option value="Boissons">🥤 Boissons</option>
+            <option value="Condiments">🧂 Condiments</option>
+            <option value="Autres">📦 Autres</option>
+        </select>
 
         <button
             type="button"
-            class="icon-button remove-ingredient">
+            class="icon-button remove-ingredient"
+            aria-label="Supprimer l'ingrédient"
+        >
             🗑
         </button>
     `;
 
-  const removeButton = $(".remove-ingredient", row);
+  row.querySelector(".ingredient-unit").value = unit;
+  row.querySelector(".ingredient-category").value = category;
 
-  removeButton.addEventListener("click", () => {
-    row.remove();
-  });
+  row.querySelector(".remove-ingredient").addEventListener(
+    "click",
+    () => row.remove()
+  );
 
   ingredientsList.appendChild(row);
-
-  const input = $(".ingredient-input", row);
-  input.addEventListener("paste", handleIngredientPaste);
-  input.focus();
-
 }
 
 function addStepLine(value = "") {
@@ -3367,14 +3657,99 @@ document.addEventListener("pointercancel", () => {
   clearDragStyles();
 });
 
+function generateShoppingFromWeek() {
+  const generatedItems = [];
+  const seenIngredients = new Set();
+
+  // On parcourt les 7 jours × déjeuner/dîner
+  for (let day = 0; day < 7; day++) {
+    for (const slot of ["lunch", "dinner"]) {
+      const meal = state.meals[`${day}-${slot}`];
+
+      if (!meal) continue;
+
+      let recipeIds = [];
+
+      // Ancien format : directement un ID
+      if (typeof meal !== "object") {
+        recipeIds = [meal];
+      }
+
+      // Nouveau format
+      if (meal?.type === "recipe") {
+        if (Array.isArray(meal.recipeIds)) {
+          recipeIds = meal.recipeIds;
+        } else if (meal.recipeId) {
+          recipeIds = [meal.recipeId];
+        }
+      }
+
+      // Récupération des recettes
+      for (const recipeId of recipeIds) {
+        const recipe = state.recipes.find(
+          r => String(r.id) === String(recipeId)
+        );
+
+        if (!recipe) continue;
+
+        for (const ingredient of recipe.ingredients ?? []) {
+          const name = String(ingredient).trim();
+
+          if (!name) continue;
+
+          const normalized = name
+            .toLowerCase()
+            .replace(/\s+/g, " ");
+
+          if (seenIngredients.has(normalized)) {
+            continue;
+          }
+
+          seenIngredients.add(normalized);
+
+          generatedItems.push({
+            id: Date.now() + generatedItems.length,
+            group: "Ingrédients du planning",
+            name,
+            qty: "",
+            checked: false,
+            source: "planning"
+          });
+        }
+      }
+    }
+  }
+
+  // On enlève uniquement les anciens articles générés automatiquement.
+  // Les articles ajoutés manuellement sont conservés.
+  state.shopping = state.shopping.filter(
+    item => item.source !== "planning"
+  );
+
+  state.shopping.push(...generatedItems);
+
+  save();
+  renderShopping();
+
+  showToast(
+    generatedItems.length
+      ? `🛒 ${generatedItems.length} ingrédients ajoutés`
+      : "Aucun ingrédient trouvé dans le planning"
+  );
+
+  navigate("shopping");
+}
+
+
+
 //$("#openRecipeModal").addEventListener("click", () => openModal("recipe"));
 $("#addShopping").addEventListener("click", () => openModal("shopping"));
 $("#addFridge").addEventListener("click", () => openModal("fridge"));
 $("#uncheckAll").addEventListener("click", () => { state.shopping.forEach(i => i.checked = false); save(); renderShopping(); });
 $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); renderWeek(); showToast("La semaine est prête à être recomposée"); });
-$("#printWeek").addEventListener("click", () => {
-  window.print();
-});
+$("#printWeek").addEventListener("click", () => { window.print(); });
+$("#generateShoppingFromWeek").addEventListener("click", generateShoppingFromWeek);
+
 
 function completeWeek(options) {
   let candidates = [...state.recipes];
