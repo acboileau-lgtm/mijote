@@ -469,6 +469,55 @@ async function deleteRecipeIngredients(recipeId) {
 }
 
 // ======================================================
+// INGRÉDIENTS STRUCTURÉS POUR LA LISTE DE COURSES
+// ======================================================
+
+
+async function getRecipeIngredientsForRecipes(recipeIds) {
+
+    if (!recipeIds?.length) {
+        return [];
+    }
+
+    const uniqueIds = [
+        ...new Set(
+            recipeIds.map(id => String(id))
+        )
+    ];
+
+    const results = await Promise.all(
+        uniqueIds.map(async recipeId => {
+
+            const response = await fetch(
+                `${RECIPE_INGREDIENTS_ENDPOINT}?recipe_id=eq.${encodeURIComponent(recipeId)}&select=recipe_id,position,quantity,unit,ingredient,category&order=position.asc`,
+                {
+                    method: "GET",
+                    headers: getHeaders()
+                }
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+
+                console.error(
+                    "❌ Erreur lecture ingrédients recette :",
+                    recipeId,
+                    errorText
+                );
+
+                throw new Error(
+                    `Impossible de charger les ingrédients de la recette ${recipeId}`
+                );
+            }
+
+            return await response.json();
+        })
+    );
+
+    return results.flat();
+}
+
+// ======================================================
 // PLANNING
 // ======================================================
 
@@ -770,4 +819,5 @@ export {
     getRecipeIngredients,
     saveRecipeIngredients,
     deleteRecipeIngredients,
+    getRecipeIngredientsForRecipes,
 };

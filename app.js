@@ -16,7 +16,8 @@ import {
   savePlanning,
   getPlanningNotes,
   savePlanningNote,
-  deletePlanningNote
+  deletePlanningNote,
+  getRecipeIngredientsForRecipes,
 } from "./js/storage.js";
 
 import { importRecipe } from "./js/import.js";
@@ -2299,23 +2300,395 @@ title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
           </div> `;
 }
 
-function renderShopping() {
-  const groups = [...new Set(state.shopping.map(i => i.group))];
-  $("#shoppingList").innerHTML = groups.map(group => `
-  <section class="shopping-group" > <h3>${group}</h3>
-      ${state.shopping.filter(i => i.group === group).map(i => `
-        <label class="shopping-item ${i.checked ? "checked" : ""}">
-          <input type="checkbox" data-check-item="${i.id}" ${i.checked ? "checked" : ""}>
-          <span>${i.name}</span><small>${i.qty}</small>
-        </label>`).join("")
+// ======================================================
+// GÉNÉRER LA LISTE DE COURSES DEPUIS LE PLANNING
+// ======================================================
+function normalizeShoppingIngredient(value) {
+
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+
+function normalizeShoppingUnit(value) {
+
+  if (!value) {
+    return "";
+  }
+
+  const unit = String(value)
+    .trim()
+    .toLowerCase();
+
+  const aliases = {
+    "pieces": "pièce",
+    "piece": "pièce",
+    "tranches": "tranche",
+    "gousses": "gousse",
+    "bottes": "botte",
+    "brins": "brin",
+    "boules": "boule",
+    "sachets": "sachet",
+    "pots": "pot",
+    "boites": "boîte"
+  };
+
+  return aliases[unit] || unit;
+}
+
+
+function shoppingItemKey(item) {
+
+  return [
+    item.group || "Autres",
+    normalizeShoppingIngredient(item.name),
+    normalizeShoppingUnit(item.unit)
+  ].join("|");
+}
+
+async function generateShoppingFromPlanning() {
+
+  console.log("🛒 Génération de la liste de courses...");
+
+  // --------------------------------------------------
+  // 1. Récupérer toutes les recettes du planning
+  // --------------------------------------------------
+
+  const recipeIds = [];
+
+  Object.values(state.meals).forEach(meal => {
+
+    if (!meal || meal.type !== "recipe") {
+      return;
     }
-    </section> `).join("");
-  const checked = state.shopping.filter(i => i.checked).length;
-  const total = state.shopping.length;
-  $("#progressText").textContent = `${checked} sur ${total} articles`;
-  $("#progressBar").style.width = total ? `${checked / total * 100}% ` : "0";
-  $("#remainingCount").textContent = total - checked;
-  $("#shoppingBadge").textContent = total - checked;
+
+    const ids = Array.isArray(meal.recipeIds)
+      ? meal.recipeIds
+      : meal.recipeId
+        ? [meal.recipeId]
+        : [];
+
+    ids.forEach(id => {
+      if (id != null) {
+        recipeIds.push(String(id));
+      }
+    });
+  });
+
+  const uniqueRecipeIds = [
+    ...new Set(recipeIds)
+  ];
+
+  console.log(
+    "🍽️ Recettes du planning :",
+    uniqueRecipeIds
+  );
+
+  if (uniqueRecipeIds.length === 0) {
+    showToast(
+      "Aucune recette dans le planning"
+    );
+    return;
+  }
+
+  // --------------------------------------------------
+  // 2. Charger les ingrédients structurés
+  // --------------------------------------------------
+
+  const ingredients =
+    await getRecipeIngredientsForRecipes(
+      uniqueRecipeIds
+    );
+
+  console.log("🛒 IDS RECETTES :", uniqueRecipeIds);
+  console.log("🥕 INGREDIENTS SUPABASE :", ingredients);
+
+  console.log(
+    "🥕 Ingrédients récupérés :",
+    ingredients
+  );
+
+  // --------------------------------------------------
+  // 3. Regroupement
+  // --------------------------------------------------
+
+  const grouped = new Map();
+
+  ingredients.forEach(item => {
+
+    const ingredient =
+      String(item.ingredient || "")
+        .trim();
+
+    if (!ingredient) {
+      return;
+    }
+
+    // On ignore nos anciennes lignes
+    // explicitement exclues.
+    const normalizedText =
+      ingredient.toLowerCase();
+
+    if (
+      normalizedText.startsWith("blank ") ||
+      normalizedText.startsWith("pour la sauce") ||
+      normalizedText.startsWith("selon votre goût") ||
+      normalizedText.startsWith("selon vos goûts")
+    ) {
+      return;
+    }
+
+    const category =
+      item.category || "Autres";
+
+    const unit =
+      item.unit
+        ? item.unit.trim()
+        : null;
+
+    const key =
+      [
+        category,
+        normalizeShoppingIngredient(
+          ingredient
+        ),
+        normalizeShoppingUnit(unit)
+      ].join("|");
+
+    if (!grouped.has(key)) {
+
+      grouped.set(key, {
+        id: `planning-${Date.now()}-${grouped.size}`,
+        group: category,
+        name: ingredient,
+        qty: item.quantity ?? null,
+        unit,
+        checked: false,
+        source: "planning"
+      });
+
+      return;
+    }
+
+    const existing =
+      grouped.get(key);
+
+    // Addition seulement si les deux
+    // quantités sont numériques.
+    if (
+      typeof existing.qty === "number" &&
+      typeof item.quantity === "number"
+    ) {
+      existing.qty += item.quantity;
+    }
+
+  });
+
+  // --------------------------------------------------
+  // 4. Préserver l'état "coché" d'une génération précédente
+  // --------------------------------------------------
+
+  const previousGenerated =
+    new Map(
+      state.shopping
+        .filter(
+          item =>
+            item.source === "planning"
+        )
+        .map(item => [
+          shoppingItemKey(item),
+          item.checked
+        ])
+    );
+
+  grouped.forEach(item => {
+
+    const key =
+      shoppingItemKey(item);
+
+    if (previousGenerated.has(key)) {
+      item.checked =
+        previousGenerated.get(key);
+    }
+  });
+
+  // --------------------------------------------------
+  // 5. Conserver les éventuels articles ajoutés
+  //    manuellement
+  // --------------------------------------------------
+
+  const manualItems =
+    state.shopping.filter(
+      item => item.source !== "planning"
+    );
+
+  state.shopping = [
+    ...manualItems,
+    ...[...grouped.values()]
+  ];
+
+  save();
+  renderShopping();
+
+  showToast(
+    `🛒 ${grouped.size} articles générés`
+  );
+}
+
+// ======================================================
+// BOUTON : GÉNÉRER LES COURSES DEPUIS LE PLANNING
+// ======================================================
+
+const generateShoppingButton =
+  $("#generateShoppingFromWeek");
+
+if (generateShoppingButton) {
+
+  generateShoppingButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await generateShoppingFromPlanning();
+
+        navigate("shopping");
+
+      } catch (error) {
+
+        console.error(
+          "❌ Erreur génération courses :",
+          error
+        );
+
+        showToast(
+          "Impossible de générer les courses"
+        );
+      }
+
+    }
+  );
+
+}
+
+
+function formatShoppingQuantity(item) {
+
+  if (item.qty === null || item.qty === undefined) {
+    return "quantité non précisée";
+  }
+
+  const quantity =
+    Number.isInteger(Number(item.qty))
+      ? Number(item.qty).toString()
+      : Number(item.qty).toLocaleString("fr-FR", {
+        maximumFractionDigits: 2
+      });
+
+  if (!item.unit) {
+    return quantity;
+  }
+
+  let unit = item.unit;
+
+  if (unit === "pièce" && Number(item.qty) > 1) {
+    unit = "pièces";
+  }
+
+  if (unit === "boule" && Number(item.qty) > 1) {
+    unit = "boules";
+  }
+
+  if (unit === "botte" && Number(item.qty) > 1) {
+    unit = "bottes";
+  }
+
+  if (unit === "tranche" && Number(item.qty) > 1) {
+    unit = "tranches";
+  }
+
+  if (unit === "gousse" && Number(item.qty) > 1) {
+    unit = "gousses";
+  }
+
+  return `${quantity} ${unit}`;
+}
+
+
+function renderShopping() {
+
+  const groups = [
+    ...new Set(
+      state.shopping.map(item =>
+        item.group || "Autres"
+      )
+    )
+  ];
+
+  $("#shoppingList").innerHTML = groups
+    .map(group => {
+
+      const items = state.shopping.filter(
+        item => (item.group || "Autres") === group
+      );
+
+      return `
+        <section class="shopping-group">
+
+          <h3>${group}</h3>
+
+          ${items.map(item => `
+            <label
+              class="shopping-item ${item.checked ? "checked" : ""}"
+            >
+
+              <input
+                type="checkbox"
+                data-check-item="${item.id}"
+                ${item.checked ? "checked" : ""}
+              >
+
+              <span>${item.name}</span>
+
+              <small>
+                ${formatShoppingQuantity(item)}
+              </small>
+
+            </label>
+          `).join("")}
+
+        </section>
+      `;
+
+    })
+    .join("");
+
+
+  const checked =
+    state.shopping.filter(
+      item => item.checked
+    ).length;
+
+  const total =
+    state.shopping.length;
+
+  $("#progressText").textContent =
+    `${checked} sur ${total} articles`;
+
+  $("#progressBar").style.width =
+    total
+      ? `${checked / total * 100}%`
+      : "0";
+
+  $("#remainingCount").textContent =
+    total - checked;
+
+  $("#shoppingBadge").textContent =
+    total - checked;
 }
 
 function renderFridge() {
@@ -3417,7 +3790,34 @@ document.addEventListener("click", async (e) => {
 
     return;
   }
-  if (nav) navigate(nav.dataset.view || nav.dataset.viewLink);
+  if (nav) {
+
+    const targetView =
+      nav.dataset.view ||
+      nav.dataset.viewLink;
+
+    if (targetView === "shopping") {
+
+      try {
+        await generateShoppingFromPlanning();
+      } catch (error) {
+
+        console.error(
+          "❌ Erreur génération courses :",
+          error
+        );
+
+        showToast(
+          "Impossible de générer les courses"
+        );
+
+        return;
+      }
+    }
+
+    navigate(targetView);
+  }
+
   const addMeal = e.target.closest("[data-add-meal]");
 
   const addSecondRecipe = e.target.closest("[data-add-second-recipe]");
@@ -3548,10 +3948,27 @@ document.addEventListener("click", async (e) => {
 });
 
 document.addEventListener("change", e => {
-  if (e.target.matches("[data-check-item]")) {
-    const item = state.shopping.find(i => i.id === +e.target.dataset.checkItem);
-    item.checked = e.target.checked; save(); renderShopping();
+
+  if (!e.target.matches("[data-check-item]")) {
+    return;
   }
+
+  const item = state.shopping.find(
+    i => String(i.id) === String(e.target.dataset.checkItem)
+  );
+
+  if (!item) {
+    console.warn(
+      "⚠️ Article introuvable :",
+      e.target.dataset.checkItem
+    );
+    return;
+  }
+
+  item.checked = e.target.checked;
+
+  save();
+  renderShopping();
 });
 
 let draggedMealKey = null;
@@ -3657,98 +4074,38 @@ document.addEventListener("pointercancel", () => {
   clearDragStyles();
 });
 
-function generateShoppingFromWeek() {
-  const generatedItems = [];
-  const seenIngredients = new Set();
-
-  // On parcourt les 7 jours × déjeuner/dîner
-  for (let day = 0; day < 7; day++) {
-    for (const slot of ["lunch", "dinner"]) {
-      const meal = state.meals[`${day}-${slot}`];
-
-      if (!meal) continue;
-
-      let recipeIds = [];
-
-      // Ancien format : directement un ID
-      if (typeof meal !== "object") {
-        recipeIds = [meal];
-      }
-
-      // Nouveau format
-      if (meal?.type === "recipe") {
-        if (Array.isArray(meal.recipeIds)) {
-          recipeIds = meal.recipeIds;
-        } else if (meal.recipeId) {
-          recipeIds = [meal.recipeId];
-        }
-      }
-
-      // Récupération des recettes
-      for (const recipeId of recipeIds) {
-        const recipe = state.recipes.find(
-          r => String(r.id) === String(recipeId)
-        );
-
-        if (!recipe) continue;
-
-        for (const ingredient of recipe.ingredients ?? []) {
-          const name = String(ingredient).trim();
-
-          if (!name) continue;
-
-          const normalized = name
-            .toLowerCase()
-            .replace(/\s+/g, " ");
-
-          if (seenIngredients.has(normalized)) {
-            continue;
-          }
-
-          seenIngredients.add(normalized);
-
-          generatedItems.push({
-            id: Date.now() + generatedItems.length,
-            group: "Ingrédients du planning",
-            name,
-            qty: "",
-            checked: false,
-            source: "planning"
-          });
-        }
-      }
-    }
-  }
-
-  // On enlève uniquement les anciens articles générés automatiquement.
-  // Les articles ajoutés manuellement sont conservés.
-  state.shopping = state.shopping.filter(
-    item => item.source !== "planning"
-  );
-
-  state.shopping.push(...generatedItems);
-
-  save();
-  renderShopping();
-
-  showToast(
-    generatedItems.length
-      ? `🛒 ${generatedItems.length} ingrédients ajoutés`
-      : "Aucun ingrédient trouvé dans le planning"
-  );
-
-  navigate("shopping");
-}
-
-
 
 //$("#openRecipeModal").addEventListener("click", () => openModal("recipe"));
 $("#addShopping").addEventListener("click", () => openModal("shopping"));
 $("#addFridge").addEventListener("click", () => openModal("fridge"));
-$("#uncheckAll").addEventListener("click", () => { state.shopping.forEach(i => i.checked = false); save(); renderShopping(); });
+$("#uncheckAll").addEventListener("click", async () => {
+
+  state.shopping.forEach(item => {
+    item.checked = false;
+  });
+
+  await save();
+  renderShopping();
+
+  showToast("🛒 Toutes les courses sont décochées");
+});
+
+$("#checkAll").addEventListener("click", async () => {
+
+  state.shopping.forEach(item => {
+    item.checked = true;
+  });
+
+  await save();
+  renderShopping();
+
+  showToast("✅ Toutes les courses sont cochées");
+});
+
+
 $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); renderWeek(); showToast("La semaine est prête à être recomposée"); });
 $("#printWeek").addEventListener("click", () => { window.print(); });
-$("#generateShoppingFromWeek").addEventListener("click", generateShoppingFromWeek);
+
 
 
 function completeWeek(options) {
