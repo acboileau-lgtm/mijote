@@ -39,7 +39,9 @@ const defaultState = {
   recipes: [],
   meals: {},
   shopping: [],
-  fridge: []
+  fridge: [],
+  pantry: [],
+  freezer: []
 };
 
 let state;
@@ -47,6 +49,14 @@ let planningNotes = [];
 
 try { state = JSON.parse(localStorage.getItem("mijote-state")) || structuredClone(defaultState); }
 catch { state = structuredClone(defaultState); }
+
+// Compatibilité avec les anciens états sauvegardés
+state.fridge ??= [];
+state.pantry ??= [];
+state.freezer ??= [];
+state.shopping ??= [];
+state.recipes ??= [];
+state.meals ??= {};
 
 // Migration des anciennes semaines lundi–dimanche vers mercredi–mardi.
 if (state.weekStart !== "wednesday") {
@@ -2692,10 +2702,113 @@ function renderShopping() {
 }
 
 function renderFridge() {
-  $("#fridgeGrid").innerHTML = state.fridge.map(f => `
-  < article class="fridge-card" ><span class="food-icon">${f.emoji}</span><h3>${f.name}</h3><p>${f.qty}</p>
-      <span class="expiry ${f.soon ? "soon" : ""}" > ${f.soon ? "À utiliser · " : "Encore "}${f.expiry}</span >
-    </article> `).join("");
+  const container = $("#stockFridge");
+  if (!container) return;
+
+  const items = state.fridge || [];
+
+  const count = $("#stockCountFridge");
+  if (count) {
+    count.textContent = items.length;
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <p class="stock-empty">Aucun produit dans le frigo.</p>
+      <button class="stock-add-button" data-location="fridge">
+        + Ajouter un produit
+      </button>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <article
+      class="stock-item"
+      data-location="fridge"
+      data-id="${item.id}"
+    >
+      <span class="food-icon">${item.emoji || "🍽️"}</span>
+      <div>
+        <strong>${item.name}</strong>
+        <span>${item.qty || ""}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+
+function renderPantry() {
+  const container = $("#stockCupboard");
+  if (!container) return;
+
+  const items = state.pantry || [];
+
+  const count = $("#stockCountCupboard");
+  if (count) {
+    count.textContent = items.length;
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <p class="stock-empty">Aucun produit dans le placard.</p>
+      <button class="stock-add-button" data-location="pantry">
+        + Ajouter un produit
+      </button>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <article
+      class="stock-item"
+      data-location="pantry"
+      data-id="${item.id}"
+    >
+      <span class="food-icon">🥫</span>
+      <div>
+        <strong>${item.name}</strong>
+        <span>${item.qty || ""}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+
+function renderFreezer() {
+  const container = $("#stockFreezer");
+  if (!container) return;
+
+  const items = state.freezer || [];
+
+  const count = $("#stockCountFreezer");
+  if (count) {
+    count.textContent = items.length;
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <p class="stock-empty">Aucun produit dans le congélateur.</p>
+      <button class="stock-add-button" data-location="freezer">
+        + Ajouter un produit
+      </button>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <article
+      class="stock-item"
+      data-location="freezer"
+      data-id="${item.id}"
+    >
+      <span class="food-icon">❄️</span>
+      <div>
+        <strong>${item.name}</strong>
+        <span>${item.qty || ""}</span>
+      </div>
+    </article>
+  `).join("");
 }
 
 function renderCategoryChips(container, selectedCategories = []) {
@@ -2748,6 +2861,28 @@ function openModal(type, payload = {}) {
   cancelButton.textContent = "Annuler";
   submitButton.hidden = false;
   submitButton.textContent = "Enregistrer";
+
+  // 🗑️ Bouton supprimer pour un produit existant
+  const oldDeleteButton = form.querySelector("#modalDeleteStock");
+  if (oldDeleteButton) oldDeleteButton.remove();
+
+  if (
+    payload.edit &&
+    ["fridge", "pantry", "freezer"].includes(type)
+  ) {
+    const deleteButton = document.createElement("button");
+
+    deleteButton.type = "button";
+    deleteButton.id = "modalDeleteStock";
+    deleteButton.className = "secondary-button";
+    deleteButton.textContent = "🗑️ Supprimer";
+
+    submitButton.parentElement.insertBefore(
+      deleteButton,
+      cancelButton
+    );
+  }
+
   // TODO FEAT-005
   // Ancien système de création de recette.
   // À supprimer lorsque recipeForm sera entièrement migré.
@@ -3207,10 +3342,59 @@ function openModal(type, payload = {}) {
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
       <div class="field"><label>Rayon</label><select name="group"><option>Fruits & légumes</option><option>Épicerie</option><option>Crèmerie</option><option>Boucherie</option><option>Poissonnerie</option></select></div></div>`;
   } else if (type === "fridge") {
-    eyebrow.textContent = "MON FRIGO"; title.textContent = "Ajouter un aliment";
-    fields.innerHTML = `<div class="field" ><label>Aliment</label><input name="name" required placeholder="Ex. Champignons"></div>
-      <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
-      <div class="field"><label>À consommer dans</label><input name="expiry" value="7 jours"></div></div>`;
+    eyebrow.textContent = "MON FRIGO";
+    title.textContent = "Ajouter un aliment";
+
+    fields.innerHTML = `
+    <div class="field">
+      <label>Aliment</label>
+      <input name="name" required placeholder="Ex. Champignons">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Quantité</label>
+        <input name="qty" value="1">
+      </div>
+
+      <div class="field">
+        <label>À consommer dans</label>
+        <input name="expiry" value="7 jours">
+      </div>
+    </div>
+  `;
+
+  } else if (type === "pantry") {
+    eyebrow.textContent = "MON PLACARD";
+    title.textContent = "Ajouter un produit";
+
+    fields.innerHTML = `
+    <div class="field">
+      <label>Produit</label>
+      <input name="name" required placeholder="Ex. Pâtes">
+    </div>
+
+    <div class="field">
+      <label>Quantité</label>
+      <input name="qty" value="1">
+    </div>
+  `;
+
+  } else if (type === "freezer") {
+    eyebrow.textContent = "MON CONGÉLATEUR";
+    title.textContent = "Ajouter un produit";
+
+    fields.innerHTML = `
+    <div class="field">
+      <label>Produit</label>
+      <input name="name" required placeholder="Ex. Blancs de poulet">
+    </div>
+
+    <div class="field">
+      <label>Quantité</label>
+      <input name="qty" value="1">
+    </div>
+  `;
   } else if (type === "recipe-details") {
     const recipe = state.recipes.find(r => r.id == payload.recipeId);
 
@@ -3248,7 +3432,11 @@ function openModal(type, payload = {}) {
       <section class="recipe-detail-section">
         <h3>Ingrédients</h3>
         ${recipe.ingredients?.length
-        ? `<ul>${recipe.ingredients.map(item => `<li>${item}</li>`).join("")}</ul>`
+        ? `<ul>${recipe.ingredients.map(item => `
+    <li>
+      ${item.quantity ?? ""} ${item.unit ?? ""} ${item.ingredient ?? ""}
+    </li>
+  `).join("")}</ul>`
         : `<p>Les ingrédients détaillés pourront être ajoutés lors de la modification de cette recette.</p>`
       }
       </section>
@@ -3264,6 +3452,34 @@ function openModal(type, payload = {}) {
 
 `;
   }
+  // ✏️ Mode modification d'un produit du stock
+  if (
+    payload.edit &&
+    payload.product &&
+    ["fridge", "pantry", "freezer"].includes(type)
+  ) {
+    const product = payload.product;
+
+    const nameInput = fields.querySelector('[name="name"]');
+    const qtyInput = fields.querySelector('[name="qty"]');
+    const expiryInput = fields.querySelector('[name="expiry"]');
+
+    if (nameInput) {
+      nameInput.value = product.name || "";
+    }
+
+    if (qtyInput) {
+      qtyInput.value = product.qty || "";
+    }
+
+    if (expiryInput) {
+      expiryInput.value = product.expiry || "";
+    }
+
+    title.textContent = "Modifier le produit";
+  }
+
+
   const slotSelect = fields.querySelector('select[name="slot"]');
 
   if (slotSelect) {
@@ -3629,10 +3845,88 @@ $("#modalForm").addEventListener("submit", async e => {
   } else if (type === "shopping") {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
   } else {
-    state.fridge.push({ id: Date.now(), name: data.name, qty: data.qty, expiry: data.expiry, soon: false, emoji: "🥬" }); renderFridge(); showToast("Aliment rangé dans le frigo");
+
+    // ✏️ Modification d'un produit existant
+    if (payload.edit && payload.product) {
+
+      let products = [];
+
+      if (type === "fridge") {
+        products = state.fridge || [];
+      } else if (type === "pantry") {
+        products = state.pantry || [];
+      } else if (type === "freezer") {
+        products = state.freezer || [];
+      }
+
+      const product = products.find(
+        p => p.id === payload.product.id
+      );
+
+      if (product) {
+        product.name = data.name;
+        product.qty = data.qty;
+
+        if (type === "fridge") {
+          product.expiry = data.expiry;
+        }
+      }
+
+      if (type === "fridge") {
+        renderFridge();
+        showToast("Aliment modifié");
+      } else if (type === "pantry") {
+        renderPantry();
+        showToast("Produit modifié");
+      } else if (type === "freezer") {
+        renderFreezer();
+        showToast("Produit modifié");
+      }
+
+    } else {
+
+      // ➕ Ajout d'un nouveau produit
+      if (type === "fridge") {
+
+        state.fridge.push({
+          id: Date.now(),
+          name: data.name,
+          qty: data.qty,
+          expiry: data.expiry,
+          soon: false,
+          emoji: "🥬"
+        });
+
+        renderFridge();
+        showToast("Aliment rangé dans le frigo");
+
+      } else if (type === "pantry") {
+
+        state.pantry.push({
+          id: Date.now(),
+          name: data.name,
+          qty: data.qty
+        });
+
+        renderPantry();
+        showToast("Produit rangé dans le placard");
+
+      } else if (type === "freezer") {
+
+        state.freezer.push({
+          id: Date.now(),
+          name: data.name,
+          qty: data.qty
+        });
+
+        renderFreezer();
+        showToast("Produit rangé dans le congélateur");
+      }
+    }
   }
 
-  save(); $("#modal").close();
+  await save();
+  $("#modal").close();
 });
 
 async function geocodeWeatherCity(city) {
@@ -4077,7 +4371,10 @@ document.addEventListener("pointercancel", () => {
 
 //$("#openRecipeModal").addEventListener("click", () => openModal("recipe"));
 $("#addShopping").addEventListener("click", () => openModal("shopping"));
-$("#addFridge").addEventListener("click", () => openModal("fridge"));
+$("#addFridge")?.addEventListener("click", () => openModal("fridge"));
+$("#addPantry")?.addEventListener("click", () => openModal("pantry"));
+$("#addFreezer")?.addEventListener("click", () => openModal("freezer"));
+
 $("#uncheckAll").addEventListener("click", async () => {
 
   state.shopping.forEach(item => {
@@ -4262,6 +4559,96 @@ async function initializeApp() {
 
 }
 
+document.addEventListener("click", (event) => {
+
+  // 🗑️ Supprimer un produit
+  const deleteButton = event.target.closest("#modalDeleteStock");
+
+  if (deleteButton) {
+    const form = $("#modalForm");
+    const type = form.dataset.type;
+    const payload = JSON.parse(form.dataset.payload || "{}");
+
+    if (!payload.product) return;
+
+    const productId = payload.product.id;
+
+    if (!confirm(`Supprimer « ${payload.product.name} » ?`)) {
+      return;
+    }
+
+    if (type === "fridge") {
+      state.fridge = (state.fridge || []).filter(
+        product => product.id !== productId
+      );
+      renderFridge();
+
+    } else if (type === "pantry") {
+      state.pantry = (state.pantry || []).filter(
+        product => product.id !== productId
+      );
+      renderPantry();
+
+    } else if (type === "freezer") {
+      state.freezer = (state.freezer || []).filter(
+        product => product.id !== productId
+      );
+      renderFreezer();
+    }
+
+    save();
+
+    $("#modal").close();
+
+    showToast("🗑️ Produit supprimé");
+    return;
+  }
+
+  // ➕ Ajouter un produit
+  const button = event.target.closest(".stock-add-button");
+
+  if (button) {
+    const location = button.dataset.location;
+
+    console.log("Clic sur Ajouter un produit :", location);
+
+    openModal(location);
+    return;
+  }
+
+
+  // ✏️ Modifier un produit existant
+  const item = event.target.closest(".stock-item");
+
+  if (item) {
+    const location = item.dataset.location;
+    const id = Number(item.dataset.id);
+
+    console.log("Clic sur produit :", location, id);
+
+    let products = [];
+
+    if (location === "fridge") {
+      products = state.fridge || [];
+    } else if (location === "pantry") {
+      products = state.pantry || [];
+    } else if (location === "freezer") {
+      products = state.freezer || [];
+    }
+
+    const product = products.find(p => p.id === id);
+
+    if (!product) return;
+
+    openModal(location, {
+      edit: true,
+      product
+    });
+  }
+});
+
+renderPantry();
+renderFreezer();
 initializeApp();
 
 

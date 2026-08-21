@@ -14,6 +14,12 @@ const PLANNING_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning`;
 const PLANNING_NOTES_ENDPOINT = `${SUPABASE_URL}/rest/v1/planning_notes`;
 const RECIPE_INGREDIENTS_ENDPOINT =
     `${SUPABASE_URL}/rest/v1/recipe_ingredients`;
+const PRODUCTS_ENDPOINT =
+    `${SUPABASE_URL}/rest/v1/products`;
+
+const STOCK_ITEMS_ENDPOINT =
+    `${SUPABASE_URL}/rest/v1/stock_items`;
+
 
 
 // ======================================================
@@ -803,6 +809,227 @@ async function deletePlanningNote(id) {
 }
 
 // ======================================================
+// STOCK — PRODUITS
+// ======================================================
+
+async function getProducts() {
+    console.log("📦 Chargement des produits depuis Supabase...");
+
+    const response = await fetch(
+        `${PRODUCTS_ENDPOINT}?select=*&order=name.asc`,
+        {
+            method: "GET",
+            headers: getHeaders()
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur lecture produits :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de charger les produits (${response.status})`
+        );
+    }
+
+    const products = await response.json();
+
+    console.log(
+        `✅ ${products.length} produit(s) chargé(s)`
+    );
+
+    return products;
+}
+
+async function addProduct(product) {
+    console.log("📦 Ajout du produit :", product);
+
+    const response = await fetch(PRODUCTS_ENDPOINT, {
+        method: "POST",
+        headers: {
+            ...getHeaders(),
+            "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+            name: product.name,
+            default_unit: product.default_unit ?? null,
+            always_have: product.always_have ?? false
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur ajout produit :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible d'ajouter le produit (${response.status})`
+        );
+    }
+
+    const result = await response.json();
+
+    console.log("✅ Produit ajouté :", result[0]);
+
+    return result[0];
+}
+
+async function addStockItem(stockItem) {
+    console.log("📦 Ajout du stock :", stockItem);
+
+    const response = await fetch(STOCK_ITEMS_ENDPOINT, {
+        method: "POST",
+        headers: {
+            ...getHeaders(),
+            "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+            product_id: stockItem.product_id,
+            brand: stockItem.brand ?? null,
+            location: stockItem.location,
+            quantity: stockItem.quantity ?? null,
+            unit: stockItem.unit ?? null,
+            expiration_date: stockItem.expiration_date ?? null
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur ajout stock :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible d'ajouter le stock (${response.status})`
+        );
+    }
+
+    const result = await response.json();
+
+    console.log("✅ Stock ajouté :", result[0]);
+
+    return result[0];
+}
+
+async function getStockItems() {
+    console.log("📦 Chargement du stock depuis Supabase...");
+
+    const response = await fetch(
+        `${STOCK_ITEMS_ENDPOINT}?select=*,product:products(name,default_unit,always_have)&order=expiration_date.asc.nullslast`,
+        {
+            method: "GET",
+            headers: getHeaders()
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur lecture stock :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de charger le stock (${response.status})`
+        );
+    }
+
+    const stockItems = await response.json();
+
+    console.log(
+        `✅ ${stockItems.length} élément(s) de stock chargé(s)`
+    );
+
+    return stockItems;
+}
+
+async function updateStockItem(id, stockItem) {
+    console.log("✏️ Modification du stock :", id, stockItem);
+
+    const response = await fetch(
+        `${STOCK_ITEMS_ENDPOINT}?id=eq.${id}`,
+        {
+            method: "PATCH",
+            headers: {
+                ...getHeaders(),
+                "Prefer": "return=representation"
+            },
+            body: JSON.stringify({
+                product_id: stockItem.product_id,
+                brand: stockItem.brand ?? null,
+                location: stockItem.location,
+                quantity: stockItem.quantity ?? null,
+                unit: stockItem.unit ?? null,
+                expiration_date: stockItem.expiration_date ?? null
+            })
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur modification stock :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de modifier le stock (${response.status})`
+        );
+    }
+
+    const result = await response.json();
+
+    console.log("✅ Stock modifié :", result[0]);
+
+    return result[0];
+}
+
+async function deleteStockItem(id) {
+    console.log("🗑️ Suppression du stock :", id);
+
+    const response = await fetch(
+        `${STOCK_ITEMS_ENDPOINT}?id=eq.${id}`,
+        {
+            method: "DELETE",
+            headers: {
+                ...getHeaders(),
+                "Prefer": "return=representation"
+            }
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur suppression stock :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de supprimer le stock (${response.status})`
+        );
+    }
+
+    const result = await response.json();
+
+    console.log("✅ Stock supprimé :", result[0]);
+
+    return result[0];
+}
+
+// ======================================================
 // EXPORTS
 // ======================================================
 
@@ -820,4 +1047,10 @@ export {
     saveRecipeIngredients,
     deleteRecipeIngredients,
     getRecipeIngredientsForRecipes,
+    getProducts,
+    addProduct,
+    addStockItem,
+    getStockItems,
+    updateStockItem,
+    deleteStockItem,
 };

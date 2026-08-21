@@ -417,6 +417,15 @@ h2 {
     background: var(--forest-dark);
 }
 
+/* 🗑️ Bouton supprimer dans les fenêtres de stock */
+#modalDeleteStock {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-width: auto;
+    width: auto;
+    border-radius: 10px;
+}
+
 .today-button,
 .icon-button {
     border: 1px solid var(--line);
@@ -2261,9 +2270,15 @@ dialog form {
     }
 
     .modal-actions button {
-        width: 100%;
         min-height: 44px;
     }
+
+    .modal-actions #modalDeleteStock {
+        width: auto;
+        min-width: 0;
+    }
+
+
 }
 
 .weather-strip {
@@ -3343,4 +3358,196 @@ dialog form {
         grid-area: delete;
         justify-self: end;
     }
+}
+
+/* =========================================================
+   STOCK
+   ========================================================= */
+
+.stock-tabs {
+    display: flex;
+    gap: 10px;
+    margin: 28px 0 24px;
+}
+
+.stock-tab {
+    border: 1px solid var(--border-color, #d8d4c8);
+    background: #fffdf8;
+    color: var(--text-color, #26352e);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stock-tab:hover {
+    border-color: #496b5a;
+}
+
+.stock-tab.active {
+    background: #496b5a;
+    color: white;
+    border-color: #496b5a;
+}
+
+
+/* Les 3 zones du stock */
+
+.stock-layout {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.stock-location {
+    background: #fffdf8;
+    border: 1px solid #e2ded3;
+    border-radius: 18px;
+    padding: 22px;
+    min-height: 260px;
+}
+
+.stock-location-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e8e4da;
+}
+
+.stock-location-header>div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stock-location-header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.stock-location-icon {
+    font-size: 24px;
+}
+
+.stock-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 50%;
+    background: #e8eee2;
+    color: #496b5a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.stock-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stock-empty {
+    margin: 20px 0;
+    color: #8a8a80;
+    font-size: 14px;
+}
+
+
+/* Carte d'un produit */
+
+.stock-item {
+    background: #f6f4ec;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.stock-item-name {
+    margin: 0 0 5px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #26352e;
+}
+
+.stock-item-details {
+    margin: 0;
+    font-size: 14px;
+    color: #6d746e;
+}
+
+.stock-item-expiration {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #7b806f;
+}
+
+.stock-item-expiration.warning {
+    color: #a36b35;
+    font-weight: 600;
+}
+
+.stock-item-expiration.expired {
+    color: #a34a42;
+    font-weight: 700;
+}
+
+
+/* Boutons d'action d'un produit */
+
+.stock-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.stock-item-actions button {
+    border: 0;
+    background: transparent;
+    padding: 4px 6px;
+    cursor: pointer;
+    color: #647267;
+    font-size: 13px;
+}
+
+.stock-item-actions button:hover {
+    color: #496b5a;
+}
+
+
+/* =========================================================
+   STOCK — MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .stock-tabs {
+        width: 100%;
+        gap: 6px;
+    }
+
+    .stock-tab {
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    .stock-layout {
+        display: block;
+    }
+
+    .stock-location {
+        display: none;
+        min-height: 220px;
+    }
+
+    .stock-location.active {
+        display: block;
+    }
+
 }
