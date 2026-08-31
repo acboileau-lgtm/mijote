@@ -3393,20 +3393,24 @@ dialog form {
 }
 
 
-/* Les 3 zones du stock */
+/* ==================================================
+   STOCK — 3 ZONES SUR 3 LIGNES
+   ================================================== */
 
 .stock-layout {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 20px;
 }
 
 .stock-location {
+    width: 100%;
+    box-sizing: border-box;
     background: #fffdf8;
     border: 1px solid #e2ded3;
     border-radius: 18px;
     padding: 22px;
-    min-height: 260px;
+    min-height: 0;
 }
 
 .stock-location-header {
@@ -3462,22 +3466,18 @@ dialog form {
 
 /* Carte d'un produit */
 
-.stock-item {
-    background: #f6f4ec;
-    border-radius: 12px;
-    padding: 14px 16px;
-}
+
 
 .stock-item-name {
     margin: 0 0 5px;
-    font-size: 16px;
+    font-size: 10px;
     font-weight: 700;
     color: #26352e;
 }
 
 .stock-item-details {
     margin: 0;
-    font-size: 14px;
+    font-size: 10px;
     color: #6d746e;
 }
 
@@ -3550,4 +3550,108 @@ dialog form {
         display: block;
     }
 
+}
+
+/* ==================================================
+   STOCK — TABLEAU PRODUITS
+   ================================================== */
+
+
+.stock-header,
+.stock-product,
+.stock-table-header,
+.stock-item {
+    display: grid;
+    grid-template-columns:
+        80px 140px minmax(180px, 1fr) 180px 45px;
+    column-gap: 0;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.stock-select {
+    grid-column: 5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stock-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.stock-selection-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 8px 0;
+}
+
+.stock-delete-selected {
+    padding: 7px 14px;
+    border: 1px solid #c44;
+    border-radius: 6px;
+    background: white;
+    color: #b33;
+    cursor: pointer;
+}
+
+.stock-delete-selected:hover {
+    background: #f8eeee;
+}
+
+/* En-tête */
+.stock-header {
+    padding: 3px 0 14px;
+    border-bottom: 1px solid #ddd;
+    font-size: 12px;
+    line-height: 0.8;
+}
+
+/* Chaque ligne */
+.stock-item {
+    padding: 1px 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 0.8;
+}
+
+/* Colonnes */
+.stock-qty {
+    grid-column: 1;
+}
+
+.stock-unit {
+    grid-column: 2;
+}
+
+.stock-name {
+    grid-column: 3;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.stock-expiry {
+    grid-column: 4;
+    white-space: nowrap;
+}
+
+/* Tableau */
+.stock-table {
+    width: 100%;
+}
+
+/* ==================================================
+   STOCK — NAVIGATION RAPIDE
+   ================================================== */
+
+.stock-nav-button {
+    cursor: pointer;
+}
+
+.stock-nav-button.active {
+    background: #587363;
+    color: white;
 }

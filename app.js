@@ -18,6 +18,15 @@ import {
   savePlanningNote,
   deletePlanningNote,
   getRecipeIngredientsForRecipes,
+
+  // 🏪 Stock — Supabase
+  getProducts,
+  addProduct,
+  addStockItem,
+  getStockItems,
+  updateStockItem,
+  deleteStockItem
+
 } from "./js/storage.js";
 
 import { importRecipe } from "./js/import.js";
@@ -103,9 +112,16 @@ function getCurrentWeekStart() {
 async function save() {
 
   // Sauvegarde locale de sécurité
+  const stateToSave = {
+    ...state,
+    fridge: undefined,
+    pantry: undefined,
+    freezer: undefined
+  };
+
   localStorage.setItem(
     "mijote-state",
-    JSON.stringify(state)
+    JSON.stringify(stateToSave)
   );
 
   // Sauvegarde du planning dans Supabase
@@ -1248,7 +1264,7 @@ function addIngredientLine(value = {}) {
             step="0.01"
             value="${quantity}"
         >
-
+  
         <select class="ingredient-unit">
             <option value="">Unité</option>
             <option value="g">g</option>
@@ -1265,14 +1281,14 @@ function addIngredientLine(value = {}) {
             <option value="pincée">pincée</option>
             <option value="à volonté">à volonté</option>
         </select>
-
+  
         <input
             type="text"
             class="ingredient-name"
             placeholder="Ex. farine"
             value="${String(ingredient).replace(/"/g, "&quot;")}"
         >
-
+  
         <select class="ingredient-category">
             <option value="">Rayon</option>
             <option value="Fruits & légumes">🥕 Fruits & légumes</option>
@@ -1287,7 +1303,7 @@ function addIngredientLine(value = {}) {
             <option value="Condiments">🧂 Condiments</option>
             <option value="Autres">📦 Autres</option>
         </select>
-
+  
         <button
             type="button"
             class="icon-button remove-ingredient"
@@ -1318,7 +1334,7 @@ function addStepLine(value = "") {
             class="step-input"
             placeholder="Décrivez cette étape..."
             rows="2">${value}</textarea>
-
+  
         <button
             type="button"
             class="icon-button remove-step">
@@ -1351,7 +1367,7 @@ function addEquipmentLine(value = "") {
       value="${value.replace(/"/g, "&quot;")}"
       placeholder="Ex. Four, Air Fryer, Monsieur Cuisine..."
     >
-
+  
     <button
       type="button"
       class="button secondary-button"
@@ -1650,7 +1666,7 @@ async function renderWeather(days) {
       <h3>🌤️ Météo à ${city}</h3>
       <p>Prévisions du ${startLabel} au ${endLabel}</p>
     </div>
-
+  
     <div class="weather-cards"></div>
   `;
 
@@ -1668,9 +1684,9 @@ async function renderWeather(days) {
             <div class="weather-day">
               <strong>${day.name.toUpperCase()}</strong>
             </div>
-
+      
             <div class="weather-icon">❔</div>
-
+      
             <div class="weather-temperatures">
               Météo indisponible
             </div>
@@ -1683,16 +1699,16 @@ async function renderWeather(days) {
           <div class="weather-day">
             <strong>${day.name.toUpperCase()}</strong>
           </div>
-
+    
           <div class="weather-icon">
             ${getWeatherIcon(data.weatherCode)}
           </div>
-
+    
           <div class="weather-temperatures">
             <span>${data.min}°</span>
             <strong>${data.max}°</strong>
           </div>
-
+    
           <div class="weather-wind">
             💨 ${data.wind} km/h
           </div>
@@ -1807,14 +1823,14 @@ function renderPlanningNote(dayInfo) {
   // Une ou plusieurs notes
   return `
   <div class="planning-notes">
-
+  
     ${notes.map(note => `
       <div class="planning-note" data-note-id="${note.id}">
-
+  
         <span class="planning-note-text">
           ${note.note}
         </span>
-
+  
         <button
           class="planning-note-delete"
           data-delete-note="${note.id}"
@@ -1822,10 +1838,10 @@ function renderPlanningNote(dayInfo) {
         >
           ×
         </button>
-
+  
       </div>
     `).join("")}
-
+  
     <button
       class="planning-note-add"
       data-add-note="${dateKey}"
@@ -1834,7 +1850,7 @@ function renderPlanningNote(dayInfo) {
     >
       📝
     </button>
-
+  
   </div>
 `;
 }
@@ -1855,11 +1871,11 @@ function renderWeek() {
         <strong>${dayInfo.name}</strong>
         <span>${dayInfo.day}</span>
       </header>
-
+  
       ${["lunch", "dinner"].map(slot => renderSlot(day, slot)).join("")}
-
+  
       ${renderPlanningNote(dayInfo)}
-
+  
     </article>
   `).join("");
 
@@ -2023,7 +2039,7 @@ function renderSlot(day, slot) {
         ${slotNames[slot]}
         <span>${slot === "lunch" ? "☀" : "☾"}</span>
       </div>
-
+  
       ${planned
       ? `
           <button
@@ -2031,7 +2047,7 @@ function renderSlot(day, slot) {
             data-remove-meal="${key}"
             aria-label="Retirer"
           >×</button>
-
+  
           ${renderMealCard(planned, key)}
         `
       : `
@@ -2237,72 +2253,72 @@ function renderRecipes(filter = "all", query = "") {
   $("#recipeGrid").innerHTML = recipes.length
     ? recipes.map(r => `
   <article class="recipe-card">
-
+    
                 <!-- ⭐ Favori: en dehors de la photo-->
                 <div class="recipe-badges">
-
+    
     <span
         class="recipe-category-badge"
         title="${r.categories?.[0] ? getCategoryLabel(r.categories[0]) : ""}">
         ${r.categories?.[0] ? getCategoryIcon(r.categories[0]) : ""}
     </span>
-
+    
     <button
         class="favorite-button ${r.favorite ? "favorite" : ""}"
 data-favorite="${r.id}"
 title = "${r.favorite ? "Retirer des favoris" : "Ajouter aux favoris"}" >
   ${r.favorite ? "★" : "☆"}
     </button>
-
+    
 </div>
-
+    
                 <!-- 📷 Zone visuelle-->
   <div class="recipe-visual ${r.color === "sage" ? "" : r.color}" >
-
+    
     ${r.photo
         ? `<img src="${r.photo}" alt="${r.name}">`
         : `<div class="recipe-placeholder">
                                 ${r.emoji}
                                </div>`
       }
-
+  
                 </div>
-
+  
                 <!-- 📝 Contenu de la recette-->
   <div class="recipe-content">
-
+  
     <h3>${r.name}</h3>
-
+  
     <p class="recipe-meta">
       ◷ ${getTotalTime(r)} min
       &nbsp;·&nbsp;
       ♙ ${r.portions} personnes
     </p>
-
+  
     <div class="tags">
       ${(r.tags ?? [])
         .map(t => `<span class="tag">${t}</span>`)
         .join("")}
     </div>
-
+  
     <div class="recipe-actions">
-
+  
       <button data-plan-recipe="${r.id}">
         Planifier
       </button>
-
+  
       <button data-edit-recipe="${r.id}">
         Modifier
       </button>
-
+  
       <button data-delete-recipe="${r.id}">
         Supprimer
       </button>
-
+  
     </div>
-
+  
   </div>
-
+  
             </article>
   `).join("")
     : `<div class="empty-state" >
@@ -2648,29 +2664,29 @@ function renderShopping() {
 
       return `
         <section class="shopping-group">
-
+    
           <h3>${group}</h3>
-
+    
           ${items.map(item => `
             <label
               class="shopping-item ${item.checked ? "checked" : ""}"
             >
-
+    
               <input
                 type="checkbox"
                 data-check-item="${item.id}"
                 ${item.checked ? "checked" : ""}
               >
-
+    
               <span>${item.name}</span>
-
+    
               <small>
                 ${formatShoppingQuantity(item)}
               </small>
-
+    
             </label>
           `).join("")}
-
+    
         </section>
       `;
 
@@ -2701,6 +2717,60 @@ function renderShopping() {
     total - checked;
 }
 
+async function loadStockFromSupabase() {
+  console.log("📦 Chargement du stock depuis Supabase...");
+
+  const stockItems = await getStockItems();
+
+  // On vide les trois zones en mémoire
+  state.fridge = [];
+  state.pantry = [];
+  state.freezer = [];
+
+  // Transformation Supabase → format utilisé par l'interface
+  stockItems.forEach(item => {
+    const product = item.product;
+
+    const stockItem = {
+      id: item.id,
+      product_id: item.product_id,
+      name: product?.name || "Produit",
+      qty: item.quantity ?? "",
+      unit: item.unit ?? product?.default_unit ?? "",
+      expiry: item.expiration_date || "",
+      brand: item.brand || null,
+      location: item.location
+    };
+
+    if (item.location === "fridge") {
+      state.fridge.push(stockItem);
+    } else if (item.location === "pantry") {
+      state.pantry.push(stockItem);
+    } else if (item.location === "freezer") {
+      state.freezer.push(stockItem);
+    }
+  });
+
+  console.log("🥶 Frigo :", state.fridge);
+  console.log("🥫 Placard :", state.pantry);
+  console.log("❄️ Congélateur :", state.freezer);
+}
+
+function formatDate(date) {
+  if (!date) return "";
+
+  const d = new Date(date + "T00:00:00");
+
+  if (isNaN(d)) return "";
+
+  return d.toLocaleDateString("fr-FR");
+}
+
+
+// ==================================================
+// STOCK — AFFICHAGE
+// ==================================================
+
 function renderFridge() {
   const container = $("#stockFridge");
   if (!container) return;
@@ -2712,29 +2782,61 @@ function renderFridge() {
     count.textContent = items.length;
   }
 
-  if (items.length === 0) {
-    container.innerHTML = `
-      <p class="stock-empty">Aucun produit dans le frigo.</p>
-      <button class="stock-add-button" data-location="fridge">
-        + Ajouter un produit
-      </button>
-    `;
-    return;
-  }
-
-  container.innerHTML = items.map(item => `
-    <article
-      class="stock-item"
+  container.innerHTML = `
+    <div class="stock-header">
+      <span>Qté</span>
+      <span>Unité</span>
+      <span>Produit</span>
+      <span>Date</span>
+    </div>
+  
+    ${items.length
+      ? items.map(item => `
+            <article
+              class="stock-item"
+              data-location="fridge"
+              data-id="${item.id}"
+            >
+              <span class="stock-qty">
+                ${item.qty || ""}
+              </span>
+    
+              <span class="stock-unit">
+                ${item.unit || ""}
+              </span>
+    
+              <span class="stock-name">
+                ${item.name || ""}
+              </span>
+    
+              <span class="stock-expiry">
+  ${item.expiry ? formatDate(item.expiry) : ""}
+</span>
+    
+<label class="stock-select" title="Sélectionner pour supprimer">
+  <input
+    type="checkbox"
+    class="stock-checkbox"
+    data-stock-id="${item.id}"
+    ${selectedStockIds.has(String(item.id)) ? "checked" : ""}
+  >
+</label>
+            </article>
+          `).join("")
+      : `
+            <p class="stock-empty">
+              Aucun produit dans le frigo.
+            </p>
+          `
+    }
+  
+    <button
+      class="stock-add-button"
       data-location="fridge"
-      data-id="${item.id}"
     >
-      <span class="food-icon">${item.emoji || "🍽️"}</span>
-      <div>
-        <strong>${item.name}</strong>
-        <span>${item.qty || ""}</span>
-      </div>
-    </article>
-  `).join("");
+      + Ajouter un produit
+    </button>
+  `;
 }
 
 
@@ -2749,29 +2851,61 @@ function renderPantry() {
     count.textContent = items.length;
   }
 
-  if (items.length === 0) {
-    container.innerHTML = `
-      <p class="stock-empty">Aucun produit dans le placard.</p>
-      <button class="stock-add-button" data-location="pantry">
-        + Ajouter un produit
-      </button>
-    `;
-    return;
-  }
-
-  container.innerHTML = items.map(item => `
-    <article
-      class="stock-item"
+  container.innerHTML = `
+    <div class="stock-header">
+      <span>Qté</span>
+      <span>Unité</span>
+      <span>Produit</span>
+      <span>Date</span>
+    </div>
+  
+    ${items.length
+      ? items.map(item => `
+            <article
+              class="stock-item"
+              data-location="pantry"
+              data-id="${item.id}"
+            >
+              <span class="stock-qty">
+                ${item.qty || ""}
+              </span>
+    
+              <span class="stock-unit">
+                ${item.unit || ""}
+              </span>
+    
+              <span class="stock-name">
+                ${item.name || ""}
+              </span>
+    
+              <span class="stock-expiry">
+  ${item.expiry ? formatDate(item.expiry) : ""}
+</span>
+    
+<label class="stock-select" title="Sélectionner pour supprimer">
+  <input
+    type="checkbox"
+    class="stock-checkbox"
+    data-stock-id="${item.id}"
+    ${selectedStockIds.has(String(item.id)) ? "checked" : ""}
+  >
+</label>
+            </article>
+          `).join("")
+      : `
+            <p class="stock-empty">
+              Aucun produit dans le placard.
+            </p>
+          `
+    }
+  
+    <button
+      class="stock-add-button"
       data-location="pantry"
-      data-id="${item.id}"
     >
-      <span class="food-icon">🥫</span>
-      <div>
-        <strong>${item.name}</strong>
-        <span>${item.qty || ""}</span>
-      </div>
-    </article>
-  `).join("");
+      + Ajouter un produit
+    </button>
+  `;
 }
 
 
@@ -2786,29 +2920,61 @@ function renderFreezer() {
     count.textContent = items.length;
   }
 
-  if (items.length === 0) {
-    container.innerHTML = `
-      <p class="stock-empty">Aucun produit dans le congélateur.</p>
-      <button class="stock-add-button" data-location="freezer">
-        + Ajouter un produit
-      </button>
-    `;
-    return;
-  }
-
-  container.innerHTML = items.map(item => `
-    <article
-      class="stock-item"
+  container.innerHTML = `
+    <div class="stock-header">
+      <span>Qté</span>
+      <span>Unité</span>
+      <span>Produit</span>
+      <span>Date</span>
+    </div>
+  
+    ${items.length
+      ? items.map(item => `
+            <article
+              class="stock-item"
+              data-location="freezer"
+              data-id="${item.id}"
+            >
+              <span class="stock-qty">
+                ${item.qty || ""}
+              </span>
+    
+              <span class="stock-unit">
+                ${item.unit || ""}
+              </span>
+    
+              <span class="stock-name">
+                ${item.name || ""}
+              </span>
+    
+              <span class="stock-expiry">
+  ${item.expiry ? formatDate(item.expiry) : ""}
+</span>
+    
+<label class="stock-select" title="Sélectionner pour supprimer">
+  <input
+    type="checkbox"
+    class="stock-checkbox"
+    data-stock-id="${item.id}"
+    ${selectedStockIds.has(String(item.id)) ? "checked" : ""}
+  >
+</label>
+            </article>
+          `).join("")
+      : `
+            <p class="stock-empty">
+              Aucun produit dans le congélateur.
+            </p>
+          `
+    }
+  
+    <button
+      class="stock-add-button"
       data-location="freezer"
-      data-id="${item.id}"
     >
-      <span class="food-icon">❄️</span>
-      <div>
-        <strong>${item.name}</strong>
-        <span>${item.qty || ""}</span>
-      </div>
-    </article>
-  `).join("");
+      + Ajouter un produit
+    </button>
+  `;
 }
 
 function renderCategoryChips(container, selectedCategories = []) {
@@ -2856,6 +3022,7 @@ function openModal(type, payload = {}) {
 
   submitButton.type = "submit";
   submitButton.dataset.editRecipeFromDetail = "";
+  cancelButton.type = "button";
   form.dataset.type = type;
   form.dataset.payload = JSON.stringify(payload);
   cancelButton.textContent = "Annuler";
@@ -2877,10 +3044,7 @@ function openModal(type, payload = {}) {
     deleteButton.className = "secondary-button";
     deleteButton.textContent = "🗑️ Supprimer";
 
-    submitButton.parentElement.insertBefore(
-      deleteButton,
-      cancelButton
-    );
+    submitButton.parentElement.prepend(deleteButton);
   }
 
   // TODO FEAT-005
@@ -2893,19 +3057,19 @@ function openModal(type, payload = {}) {
     <label>Nom de la recette</label>
     <input name="name" required placeholder="Ex. Gratin de courgettes">
   </div>
-
+      
   <div class="field-row">
     <div class="field">
       <label>Temps (minutes)</label>
       <input name="time" type="number" min="5" value="30" required>
     </div>
-
+      
     <div class="field">
       <label>Portions</label>
       <input name="portions" type="number" min="1" value="4" required>
     </div>
   </div>
-
+      
   <div class="field">
     <label>Type</label>
     <select name="veggie">
@@ -2913,7 +3077,7 @@ function openModal(type, payload = {}) {
       <option value="true">Végétarien</option>
     </select>
   </div>
-
+      
   <div class="field">
     <label>Catégories</label>
     <div id="recipeCategories"></div>
@@ -2941,20 +3105,20 @@ function openModal(type, payload = {}) {
                 <option value="occasion">🏠 Une occasion</option>
             </select>
         </div>
-
+      
         <div id="mealRecipeField" class="field">
             <label>Recette</label>
             <div class="recipe-search">
-
+      
     <div id="selectedRecipes" class="selected-recipes"></div>
-
+      
     <input
         type="text"
         id="mealRecipeSearch"
         placeholder="🔎 Rechercher une recette..."
         autocomplete="off"
     >
-
+      
     <div id="mealRecipeResults" class="recipe-search-results">
         ${state.recipes.map(r => `
             <button
@@ -2967,12 +3131,12 @@ function openModal(type, payload = {}) {
             </button>
         `).join("")}
     </div>
-
+      
     <input type="hidden" name="recipe" id="selectedRecipeId">
-
+      
 </div>
         </div>
-
+      
         <div id="mealTextField" class="field hidden">
             <label id="mealTextLabel">Nom</label>
             <input
@@ -2981,7 +3145,7 @@ function openModal(type, payload = {}) {
                 placeholder="Ex. Cassoulet"
             >
         </div>
-
+      
         <div id="mealPhotoField" class="field hidden">
             <label>Photo <span class="optional">(facultative)</span></label>
             <input
@@ -3028,7 +3192,7 @@ function openModal(type, payload = {}) {
         <span>
           ${recipe.emoji || "🍽️"} ${recipe.name}
         </span>
-
+          
         <button
           type="button"
           class="remove-selected-recipe"
@@ -3164,13 +3328,13 @@ function openModal(type, payload = {}) {
             <label>Recette</label>
             <p><strong>${payload.recipe.name}</strong></p>
         </div>
-
+      
   <div class="field">
     <label>Créneau</label>
-
+      
     <select name="slot" required>
       <option value="">Choisir...</option>
-
+      
       ${getWeekDays().flatMap((dayInfo, day) =>
       ["lunch", "dinner"].map(slot => {
 
@@ -3187,7 +3351,7 @@ function openModal(type, payload = {}) {
     `;
       }).filter(Boolean)
     ).join("")}
-
+    
     </select>
   </div>
 `;
@@ -3205,28 +3369,28 @@ function openModal(type, payload = {}) {
         Éviter les doublons
     </label>
     </div>
-
+    
     <div class="field">
       <label>
         <input type="checkbox" name="quickDinner" checked>
         Favoriser les repas rapides le soir
       </label>
     </div>
-
+    
     <div class="field">
       <label>
         <input type="checkbox" name="veggie" checked>
         Prévoir au moins 2 repas végétariens
       </label>
     </div>
-
+    
     <div class="field">
       <label>
         <input type="checkbox" name="favorites">
         Utiliser les recettes favorites
       </label>
     </div>
-
+    
     <div class="field">
       <label>
         <input type="checkbox" name="fridge">
@@ -3251,7 +3415,7 @@ function openModal(type, payload = {}) {
         placeholder="Ex. Anniversaire Juline"
       >
     </div>
-
+    
     <div class="field">
       <label>Date</label>
       <input
@@ -3261,7 +3425,7 @@ function openModal(type, payload = {}) {
         required
       >
     </div>
-
+    
     <div class="field">
       <label>
         <input
@@ -3272,12 +3436,12 @@ function openModal(type, payload = {}) {
         Récurrente
       </label>
     </div>
-
+    
     <div id="recurrenceOptions" hidden>
-
+    
       <div class="field">
         <label>Répéter</label>
-
+    
         <select name="recurrence_type" id="recurrenceType">
           <option value="yearly">Tous les ans</option>
           <option value="weekly">Toutes les semaines</option>
@@ -3285,7 +3449,7 @@ function openModal(type, payload = {}) {
           <option value="monthly_weekday">Un jour précis du mois</option>
         </select>
       </div>
-
+    
       <div class="field" id="recurrenceIntervalField">
         <label>Intervalle</label>
         <input
@@ -3295,10 +3459,10 @@ function openModal(type, payload = {}) {
           value="1"
         >
       </div>
-
+    
       <div class="field" id="recurrenceWeekField" hidden>
         <label>Numéro dans le mois</label>
-
+    
         <select name="recurrence_week">
           <option value="1">1er</option>
           <option value="2">2ème</option>
@@ -3307,7 +3471,7 @@ function openModal(type, payload = {}) {
           <option value="5">5ème</option>
         </select>
       </div>
-
+    
     </div>
   `;
 
@@ -3341,6 +3505,52 @@ function openModal(type, payload = {}) {
     fields.innerHTML = `<div class="field" ><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
       <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
       <div class="field"><label>Rayon</label><select name="group"><option>Fruits & légumes</option><option>Épicerie</option><option>Crèmerie</option><option>Boucherie</option><option>Poissonnerie</option></select></div></div>`;
+
+  } else if (type === "stock") {
+
+    eyebrow.textContent = "MON STOCK";
+    title.textContent = "Ajouter un produit";
+
+    fields.innerHTML = `
+    <div class="field">
+      <label>Produit</label>
+      <input
+        name="name"
+        required
+        placeholder="Ex. Champignons"
+      >
+    </div>
+    
+    <div class="field-row">
+    
+      <div class="field">
+        <label>Quantité</label>
+        <input
+          name="qty"
+          value="1"
+        >
+      </div>
+    
+      <div class="field">
+        <label>Ranger dans</label>
+        <select name="location" required>
+          <option value="fridge">🧊 Frigo</option>
+          <option value="pantry">🥫 Placard</option>
+          <option value="freezer">❄️ Congélateur</option>
+        </select>
+      </div>
+    
+    </div>
+    
+    <div class="field">
+      <label>Date de péremption / DLC</label>
+      <input
+        name="expiry"
+        type="date"
+      >
+    </div>
+  `;
+
   } else if (type === "fridge") {
     eyebrow.textContent = "MON FRIGO";
     title.textContent = "Ajouter un aliment";
@@ -3348,19 +3558,40 @@ function openModal(type, payload = {}) {
     fields.innerHTML = `
     <div class="field">
       <label>Aliment</label>
-      <input name="name" required placeholder="Ex. Champignons">
+      <input
+        name="name"
+        required
+        placeholder="Ex. Champignons"
+      >
     </div>
-
+    
     <div class="field-row">
       <div class="field">
         <label>Quantité</label>
-        <input name="qty" value="1">
+        <input
+          name="qty"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="Ex. 6"
+        >
       </div>
-
+    
       <div class="field">
-        <label>À consommer dans</label>
-        <input name="expiry" value="7 jours">
+        <label>Unité</label>
+        <input
+          name="unit"
+          placeholder="Ex. pièces, g, kg, L..."
+        >
       </div>
+    </div>
+    
+    <div class="field">
+      <label>Date de péremption / DLC</label>
+      <input
+        name="expiry"
+        type="date"
+      >
     </div>
   `;
 
@@ -3371,12 +3602,40 @@ function openModal(type, payload = {}) {
     fields.innerHTML = `
     <div class="field">
       <label>Produit</label>
-      <input name="name" required placeholder="Ex. Pâtes">
+      <input
+        name="name"
+        required
+        placeholder="Ex. Pâtes"
+      >
     </div>
-
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Quantité</label>
+        <input
+          name="qty"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="Ex. 2"
+        >
+      </div>
+    
+      <div class="field">
+        <label>Unité</label>
+        <input
+          name="unit"
+          placeholder="Ex. paquets, g, kg, L..."
+        >
+      </div>
+    </div>
+    
     <div class="field">
-      <label>Quantité</label>
-      <input name="qty" value="1">
+      <label>Date de péremption / DLC</label>
+      <input
+        name="expiry"
+        type="date"
+      >
     </div>
   `;
 
@@ -3387,14 +3646,44 @@ function openModal(type, payload = {}) {
     fields.innerHTML = `
     <div class="field">
       <label>Produit</label>
-      <input name="name" required placeholder="Ex. Blancs de poulet">
+      <input
+        name="name"
+        required
+        placeholder="Ex. Blancs de poulet"
+      >
     </div>
-
+    
+    <div class="field-row">
+      <div class="field">
+        <label>Quantité</label>
+        <input
+          name="qty"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="Ex. 4"
+        >
+      </div>
+    
+      <div class="field">
+        <label>Unité</label>
+        <input
+          name="unit"
+          placeholder="Ex. pièces, g, kg..."
+        >
+      </div>
+    </div>
+    
     <div class="field">
-      <label>Quantité</label>
-      <input name="qty" value="1">
+      <label>Date de péremption / DLC</label>
+      <input
+        name="expiry"
+        type="date"
+      >
     </div>
   `;
+
+
   } else if (type === "recipe-details") {
     const recipe = state.recipes.find(r => r.id == payload.recipeId);
 
@@ -3422,13 +3711,13 @@ function openModal(type, payload = {}) {
         <span>♙ ${recipe.portions} personnes</span>
         ${recipe.veggie ? "<span>☘ Végétarien</span>" : ""}
       </div>
-
+    
       <div class="tags recipe-detail-tags">
         ${(recipe.tags || [])
         .map(t => `<span class="tag">${t}</span>`)
         .join("")}
       </div>
-
+    
       <section class="recipe-detail-section">
         <h3>Ingrédients</h3>
         ${recipe.ingredients?.length
@@ -3440,7 +3729,7 @@ function openModal(type, payload = {}) {
         : `<p>Les ingrédients détaillés pourront être ajoutés lors de la modification de cette recette.</p>`
       }
       </section>
-
+    
       <section class="recipe-detail-section">
         <h3>Préparation</h3>
         ${recipe.steps?.length
@@ -3448,8 +3737,8 @@ function openModal(type, payload = {}) {
         : `<p>La préparation détaillée n’a pas encore été renseignée.</p>`
       }
       </section>
-
-
+  
+  
 `;
   }
   // ✏️ Mode modification d'un produit du stock
@@ -3462,23 +3751,27 @@ function openModal(type, payload = {}) {
 
     const nameInput = fields.querySelector('[name="name"]');
     const qtyInput = fields.querySelector('[name="qty"]');
+    const unitInput = fields.querySelector('[name="unit"]');
     const expiryInput = fields.querySelector('[name="expiry"]');
 
     if (nameInput) {
-      nameInput.value = product.name || "";
+      nameInput.value = product.name ?? "";
     }
 
     if (qtyInput) {
-      qtyInput.value = product.qty || "";
+      qtyInput.value = product.qty ?? "";
+    }
+
+    if (unitInput) {
+      unitInput.value = product.unit ?? "";
     }
 
     if (expiryInput) {
-      expiryInput.value = product.expiry || "";
+      expiryInput.value = product.expiry ?? "";
     }
 
     title.textContent = "Modifier le produit";
   }
-
 
   const slotSelect = fields.querySelector('select[name="slot"]');
 
@@ -3645,69 +3938,14 @@ $("#modalForm").addEventListener("submit", async e => {
   e.preventDefault();
   const form = e.currentTarget, data = Object.fromEntries(new FormData(form));
   const type = form.dataset.type, payload = JSON.parse(form.dataset.payload || "{}");
-  // TODO FEAT-005
-  // Ancien système de création de recette.
-  // À supprimer lorsque recipeForm sera entièrement migré.
-  if (type === "recipe") {
-    const id = Date.now();
 
-    state.recipes.push({
-      // Identification
-      id,
-      name: data.name,
-      photo: "",
+  const stockLocation =
+    type === "stock"
+      ? data.location
+      : type;
 
-      // Classement
-      category: "Plat",
-      tags: [
-        data.veggie === "true" ? "Végétarien" : "Maison",
-        +data.time <= 30 ? "Express" : "À partager"
-      ].filter(Boolean),
 
-      // Apparence
-      emoji: data.veggie === "true" ? "🥗" : "🍝",
-      color: data.veggie === "true" ? "sage" : "orange",
-
-      // Temps
-      prepTime: +data.time,
-      cookTime: 0,
-      restTime: 0,
-
-      // Portions
-      portions: +data.portions,
-
-      // Régimes
-      veggie: data.veggie === "true",
-      vegan: false,
-      glutenFree: false,
-      lactoseFree: false,
-
-      // Préférences
-      favorite: false,
-      archived: false,
-
-      // Difficulté / coût
-      difficulty: 1,
-      price: 1,
-
-      // Organisation
-      equipment: [],
-      occasion: [],
-
-      // Contenu
-      ingredients: [],
-      steps: [],
-      notes: "",
-
-      // Statistiques
-      lastCooked: null,
-      cookCount: 0,
-      rating: 0
-    });
-
-    renderRecipes(); showToast("Recette ajoutée à votre carnet");
-
-  } else if (type === "meal") {
+  if (type === "meal") {
 
     const mealType = data.mealType;
 
@@ -3846,81 +4084,120 @@ $("#modalForm").addEventListener("submit", async e => {
     state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
   } else {
 
+    // ==================================================
+    // STOCK — MODIFICATION / AJOUT
+    // ==================================================
+
     // ✏️ Modification d'un produit existant
     if (payload.edit && payload.product) {
 
-      let products = [];
+      try {
 
-      if (type === "fridge") {
-        products = state.fridge || [];
-      } else if (type === "pantry") {
-        products = state.pantry || [];
-      } else if (type === "freezer") {
-        products = state.freezer || [];
-      }
+        await updateStockItem(payload.product.id, {
+          product_id: payload.product.product_id,
+          brand: payload.product.brand ?? null,
+          location: stockLocation,
+          quantity: data.qty,
+          unit: payload.product.unit ?? null,
+          expiration_date: data.expiry || null,
+        });
 
-      const product = products.find(
-        p => p.id === payload.product.id
-      );
-
-      if (product) {
-        product.name = data.name;
-        product.qty = data.qty;
+        // Recharge le stock depuis Supabase
+        await loadStockFromSupabase();
 
         if (type === "fridge") {
-          product.expiry = data.expiry;
+          renderFridge();
+        } else if (type === "pantry") {
+          renderPantry();
+        } else if (type === "freezer") {
+          renderFreezer();
         }
-      }
 
-      if (type === "fridge") {
-        renderFridge();
-        showToast("Aliment modifié");
-      } else if (type === "pantry") {
-        renderPantry();
-        showToast("Produit modifié");
-      } else if (type === "freezer") {
-        renderFreezer();
-        showToast("Produit modifié");
+        showToast(
+          type === "fridge"
+            ? "Aliment modifié"
+            : "Produit modifié"
+        );
+
+      } catch (error) {
+
+        console.error(
+          "❌ Erreur modification stock :",
+          error
+        );
+
+        showToast("Impossible de modifier le produit");
+        return;
       }
 
     } else {
 
       // ➕ Ajout d'un nouveau produit
-      if (type === "fridge") {
+      try {
 
-        state.fridge.push({
-          id: Date.now(),
-          name: data.name,
-          qty: data.qty,
-          expiry: data.expiry,
-          soon: false,
-          emoji: "🥬"
+        // 1️⃣ Cherche si le produit existe déjà dans Supabase
+        const products = await getProducts();
+
+        let product = products.find(
+          p =>
+            String(p.name).trim().toLowerCase() ===
+            String(data.name).trim().toLowerCase()
+        );
+
+        // 2️⃣ S'il n'existe pas, on le crée
+        if (!product) {
+
+          product = await addProduct({
+            name: data.name,
+            default_unit: null,
+            always_have: false
+          });
+
+        }
+
+        console.log("📦 Produit utilisé :", product);
+
+        // 3️⃣ Crée la ligne de stock
+        await addStockItem({
+
+          product_id: product.id,
+
+          location: stockLocation,
+
+          quantity: data.qty,
+
+          unit: data.unit || null,
+
+          expiration_date: data.expiry || null,
+
+          brand: null
         });
 
+        // 4️⃣ Recharge le stock depuis Supabase
+        await loadStockFromSupabase();
+
+        // 5️⃣ Réaffiche les trois zones
         renderFridge();
-        showToast("Aliment rangé dans le frigo");
-
-      } else if (type === "pantry") {
-
-        state.pantry.push({
-          id: Date.now(),
-          name: data.name,
-          qty: data.qty
-        });
-
         renderPantry();
-        showToast("Produit rangé dans le placard");
-
-      } else if (type === "freezer") {
-
-        state.freezer.push({
-          id: Date.now(),
-          name: data.name,
-          qty: data.qty
-        });
-
         renderFreezer();
-        showToast("Produit rangé dans le congélateur");
+
+        showToast(
+          stockLocation === "fridge"
+            ? "Aliment rangé dans le frigo"
+            : stockLocation === "pantry"
+              ? "Produit rangé dans le placard"
+              : "Produit rangé dans le congélateur"
+        );
+
+      } catch (error) {
+
+        console.error(
+          "❌ Erreur ajout stock :",
+          error
+        );
+
+        showToast("Impossible d'ajouter le produit");
+        return;
       }
     }
   }
@@ -3962,7 +4239,54 @@ async function geocodeWeatherCity(city) {
   };
 }
 
+// ==================================================
+// STOCK — NAVIGATION ENTRE LES ZONES
+// ==================================================
+
+document.addEventListener("click", (e) => {
+  const button = e.target.closest("[data-stock-nav]");
+  if (!button) return;
+
+  const targetId = button.dataset.stockNav;
+  const target = document.getElementById(targetId);
+
+  if (!target) return;
+
+  target.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+});
+
+// ==================================================
+// STOCK — SÉLECTION POUR SUPPRESSION
+// ==================================================
+
+const selectedStockIds = new Set();
+
+
 document.addEventListener("click", async (e) => {
+
+  // ==================================================
+  // STOCK — CASES À COCHER
+  // ==================================================
+
+  const checkbox = e.target.closest(".stock-checkbox");
+
+  if (checkbox) {
+
+    const productId = String(checkbox.dataset.stockId);
+
+    if (checkbox.checked) {
+      selectedStockIds.add(productId);
+    } else {
+      selectedStockIds.delete(productId);
+    }
+
+    updateStockSelectionUI();
+
+    return;
+  }
 
   // Ouvrir les réglages
   const openSettings = e.target.closest("#openSettingsButton");
@@ -4029,6 +4353,62 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
+  // ➕ Ajouter un produit au stock
+  const stockAddButton = e.target.closest(".stock-add-button");
+
+  if (stockAddButton) {
+
+    const location = stockAddButton.dataset.location;
+
+    console.log("➕ Ajout d'un produit au stock :", location);
+
+    openModal(location);
+
+    return;
+  }
+
+  // ✏️ Modifier un produit du stock
+  const stockItem = e.target.closest(".stock-item");
+
+  if (stockItem) {
+
+    const location = stockItem.dataset.location;
+    const id = stockItem.dataset.id;
+
+    let product;
+
+    if (location === "fridge") {
+      product = state.fridge.find(
+        item => String(item.id) === String(id)
+      );
+    } else if (location === "pantry") {
+      product = state.pantry.find(
+        item => String(item.id) === String(id)
+      );
+    } else if (location === "freezer") {
+      product = state.freezer.find(
+        item => String(item.id) === String(id)
+      );
+    }
+
+    if (!product) {
+      console.error("❌ Produit stock introuvable :", {
+        location,
+        id
+      });
+      return;
+    }
+
+    console.log("✏️ Modification du stock :", product);
+
+    openModal(location, {
+      edit: true,
+      product
+    });
+
+    return;
+  }
+
   const addNote = e.target.closest("[data-add-note]");
 
   if (addNote) {
@@ -4070,6 +4450,145 @@ document.addEventListener("click", async (e) => {
 
     return;
   }
+
+  // 🗑️ Supprimer un produit du stock
+  const deleteStockButton = e.target.closest("#modalDeleteStock");
+
+  if (deleteStockButton) {
+
+    const form = $("#modalForm");
+    const type = form.dataset.type;
+    const payload = JSON.parse(form.dataset.payload || "{}");
+
+    if (!payload.product) {
+      console.error("❌ Produit à supprimer introuvable");
+      return;
+    }
+
+    const productId = String(payload.product.id);
+
+    if (!confirm(`Supprimer « ${payload.product.name} » ?`)) {
+      return;
+    }
+
+    try {
+
+      // 🗑️ Suppression dans Supabase
+      await deleteStockItem(productId);
+
+      console.log("✅ Produit supprimé de Supabase :", productId);
+
+      // Fermer immédiatement la modale
+      const modal = $("#modal");
+
+      if (modal?.open) {
+        modal.close();
+      }
+
+      // 🔄 Recharger le stock depuis Supabase
+      await loadStockFromSupabase();
+
+      // 🔄 Réafficher le stock
+      if (type === "fridge") {
+        renderFridge();
+      } else if (type === "pantry") {
+        renderPantry();
+      } else if (type === "freezer") {
+        renderFreezer();
+      }
+
+      showToast("🗑️ Produit supprimé");
+
+    } catch (error) {
+
+      console.error(
+        "❌ Erreur suppression produit :",
+        error
+      );
+
+      showToast("Impossible de supprimer le produit");
+    }
+
+    return;
+  }
+
+  // ==================================================
+  // STOCK — SUPPRESSION MULTIPLE
+  // ==================================================
+
+  const deleteSelectedButton =
+    e.target.closest(".stock-delete-selected");
+
+  if (deleteSelectedButton) {
+
+    const location = deleteSelectedButton.dataset.location;
+
+    const idsToDelete = (state[location] || [])
+      .map(item => String(item.id))
+      .filter(id => selectedStockIds.has(id));
+
+    if (!idsToDelete.length) {
+      return;
+    }
+
+    const count = idsToDelete.length;
+
+    const confirmed = confirm(
+      `Supprimer ${count} produit${count > 1 ? "s" : ""} sélectionné${count > 1 ? "s" : ""} ?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+
+      // 🗑️ Suppression dans Supabase
+      await Promise.all(
+        idsToDelete.map(id => deleteStockItem(id))
+      );
+
+      console.log(
+        "✅ Produits supprimés :",
+        idsToDelete
+      );
+
+      // Retirer de la sélection
+      idsToDelete.forEach(id => {
+        selectedStockIds.delete(id);
+      });
+
+      // 🔄 Recharger le stock
+      await loadStockFromSupabase();
+
+      // 🔄 Réafficher les trois zones
+      renderFridge();
+      renderPantry();
+      renderFreezer();
+
+      updateStockSelectionUI();
+
+      showToast(
+        `🗑️ ${count} produit${count > 1 ? "s" : ""} supprimé${count > 1 ? "s" : ""}`
+      );
+
+    } catch (error) {
+
+      console.error(
+        "❌ Erreur suppression multiple :",
+        error
+      );
+
+      showToast(
+        "Impossible de supprimer les produits sélectionnés"
+      );
+    }
+
+    return;
+  }
+
+
+
 
   const nav = e.target.closest("[data-view], [data-view-link]");
   // Ouvrir la fiche recette depuis le planning
@@ -4165,13 +4684,15 @@ document.addEventListener("click", async (e) => {
 
     if (recipe) {
       recipe.favorite = !recipe.favorite;
+
+      await saveRecipeToDB(recipe);
+
       showToast(
         recipe.favorite
           ? `⭐ "${recipe.name}" ajouté aux favoris`
           : `☆ "${recipe.name}" retiré des favoris`
       );
 
-      save();
       renderRecipes();
     }
 
@@ -4368,9 +4889,30 @@ document.addEventListener("pointercancel", () => {
   clearDragStyles();
 });
 
+document.addEventListener("click", (e) => {
+  const cancelButton = e.target.closest(
+    "#modalForm .modal-actions .secondary-button"
+  );
+
+  if (!cancelButton) return;
+
+  // Ne pas intercepter le bouton Supprimer
+  if (cancelButton.id === "modalDeleteStock") return;
+
+  const modal = $("#modal");
+
+  if (modal?.open) {
+    modal.close();
+  }
+});
+
 
 //$("#openRecipeModal").addEventListener("click", () => openModal("recipe"));
 $("#addShopping").addEventListener("click", () => openModal("shopping"));
+$("#addStock")?.addEventListener(
+  "click",
+  () => openModal("stock")
+);
 $("#addFridge")?.addEventListener("click", () => openModal("fridge"));
 $("#addPantry")?.addEventListener("click", () => openModal("pantry"));
 $("#addFreezer")?.addEventListener("click", () => openModal("freezer"));
@@ -4404,6 +4946,31 @@ $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); rend
 $("#printWeek").addEventListener("click", () => { window.print(); });
 
 
+
+// ==================================================
+// STOCK — AFFICHAGE DU BOUTON DE SUPPRESSION
+// ==================================================
+
+function updateStockSelectionUI() {
+
+  const count = selectedStockIds.size;
+
+  document.querySelectorAll(".stock-delete-selected").forEach(button => {
+
+    const location = button.dataset.location;
+
+    const locationIds = (state[location] || [])
+      .map(item => String(item.id))
+      .filter(id => selectedStockIds.has(id));
+
+    const selectedCount = locationIds.length;
+
+    button.hidden = selectedCount === 0;
+
+    button.textContent =
+      `🗑️ Supprimer la sélection (${selectedCount})`;
+  });
+}
 
 function completeWeek(options) {
   let candidates = [...state.recipes];
@@ -4543,6 +5110,9 @@ async function initializeApp() {
 
   await openDatabase();
 
+  // 🏪 Chargement du stock depuis Supabase
+  await loadStockFromSupabase();
+
   state.recipes = (await initializeRecipes())
     .map(createRecipe);
 
@@ -4552,103 +5122,12 @@ async function initializeApp() {
   planningNotes = await getPlanningNotes();
 
   renderWeek();
-
   renderRecipes();
   renderShopping();
-  renderFridge();
 
+  renderFridge();
+  renderPantry();
+  renderFreezer();
 }
 
-document.addEventListener("click", (event) => {
-
-  // 🗑️ Supprimer un produit
-  const deleteButton = event.target.closest("#modalDeleteStock");
-
-  if (deleteButton) {
-    const form = $("#modalForm");
-    const type = form.dataset.type;
-    const payload = JSON.parse(form.dataset.payload || "{}");
-
-    if (!payload.product) return;
-
-    const productId = payload.product.id;
-
-    if (!confirm(`Supprimer « ${payload.product.name} » ?`)) {
-      return;
-    }
-
-    if (type === "fridge") {
-      state.fridge = (state.fridge || []).filter(
-        product => product.id !== productId
-      );
-      renderFridge();
-
-    } else if (type === "pantry") {
-      state.pantry = (state.pantry || []).filter(
-        product => product.id !== productId
-      );
-      renderPantry();
-
-    } else if (type === "freezer") {
-      state.freezer = (state.freezer || []).filter(
-        product => product.id !== productId
-      );
-      renderFreezer();
-    }
-
-    save();
-
-    $("#modal").close();
-
-    showToast("🗑️ Produit supprimé");
-    return;
-  }
-
-  // ➕ Ajouter un produit
-  const button = event.target.closest(".stock-add-button");
-
-  if (button) {
-    const location = button.dataset.location;
-
-    console.log("Clic sur Ajouter un produit :", location);
-
-    openModal(location);
-    return;
-  }
-
-
-  // ✏️ Modifier un produit existant
-  const item = event.target.closest(".stock-item");
-
-  if (item) {
-    const location = item.dataset.location;
-    const id = Number(item.dataset.id);
-
-    console.log("Clic sur produit :", location, id);
-
-    let products = [];
-
-    if (location === "fridge") {
-      products = state.fridge || [];
-    } else if (location === "pantry") {
-      products = state.pantry || [];
-    } else if (location === "freezer") {
-      products = state.freezer || [];
-    }
-
-    const product = products.find(p => p.id === id);
-
-    if (!product) return;
-
-    openModal(location, {
-      edit: true,
-      product
-    });
-  }
-});
-
-renderPantry();
-renderFreezer();
 initializeApp();
-
-

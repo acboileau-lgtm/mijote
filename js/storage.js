@@ -317,6 +317,10 @@ async function deleteRecipeFromDB(id) {
         id
     );
 
+    // 🧂 Supprimer d'abord les ingrédients associés
+    await deleteRecipeIngredients(id);
+
+    // 🍲 Puis supprimer la recette
     const response = await fetch(
         `${RECIPES_ENDPOINT}?id=eq.${encodeURIComponent(id)}`,
         {
@@ -343,7 +347,7 @@ async function deleteRecipeFromDB(id) {
     }
 
     console.log(
-        "✅ Recette supprimée de Supabase"
+        "✅ Recette et ingrédients supprimés de Supabase"
     );
 }
 
@@ -894,7 +898,9 @@ async function addStockItem(stockItem) {
             product_id: stockItem.product_id,
             brand: stockItem.brand ?? null,
             location: stockItem.location,
-            quantity: stockItem.quantity ?? null,
+            quantity: stockItem.quantity === "" || stockItem.quantity == null
+                ? null
+                : Number(stockItem.quantity),
             unit: stockItem.unit ?? null,
             expiration_date: stockItem.expiration_date ?? null
         })
@@ -999,12 +1005,12 @@ async function deleteStockItem(id) {
     console.log("🗑️ Suppression du stock :", id);
 
     const response = await fetch(
-        `${STOCK_ITEMS_ENDPOINT}?id=eq.${id}`,
+        `${STOCK_ITEMS_ENDPOINT}?id=eq.${encodeURIComponent(id)}`,
         {
             method: "DELETE",
             headers: {
                 ...getHeaders(),
-                "Prefer": "return=representation"
+                "Prefer": "return=minimal"
             }
         }
     );
@@ -1022,11 +1028,7 @@ async function deleteStockItem(id) {
         );
     }
 
-    const result = await response.json();
-
-    console.log("✅ Stock supprimé :", result[0]);
-
-    return result[0];
+    console.log("✅ Stock supprimé de Supabase :", id);
 }
 
 // ======================================================

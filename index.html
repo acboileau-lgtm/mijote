@@ -198,21 +198,21 @@
             <p>Gardez un œil sur ce que vous avez dans le frigo, le placard et le congélateur.</p>
           </div>
 
-          <button class="button primary-button" id="addStockItem">
-            ＋ Ajouter au stock
+          <button id="addStock" class="button primary-button">
+            + Ajouter au stock
           </button>
         </div>
 
         <div class="stock-tabs">
-          <button class="stock-tab active" data-location="fridge">
+          <button class="stock-nav-button active" data-stock-nav="stockFridge">
             🧊 Frigo
           </button>
 
-          <button class="stock-tab" data-location="cupboard">
+          <button class="stock-nav-button" data-stock-nav="stockCupboard">
             🥫 Placard
           </button>
 
-          <button class="stock-tab" data-location="freezer">
+          <button class="stock-nav-button" data-stock-nav="stockFreezer">
             ❄️ Congélateur
           </button>
         </div>
@@ -226,6 +226,11 @@
                 <h2>Frigo</h2>
               </div>
               <span class="stock-count" id="stockCountFridge">0</span>
+            </div>
+            <div class="stock-selection-actions" data-location="fridge">
+              <button class="stock-delete-selected" data-location="fridge" hidden>
+                🗑️ Supprimer la sélection
+              </button>
             </div>
 
             <div class="stock-list" id="stockFridge">
@@ -244,6 +249,11 @@
               </div>
               <span class="stock-count" id="stockCountCupboard">0</span>
             </div>
+            <div class="stock-selection-actions" data-location="pantry">
+              <button class="stock-delete-selected" data-location="pantry" hidden>
+                🗑️ Supprimer la sélection
+              </button>
+            </div>
 
             <div class="stock-list" id="stockCupboard">
               <p class="stock-empty">Aucun produit dans le placard.</p>
@@ -260,6 +270,11 @@
                 <h2>Congélateur</h2>
               </div>
               <span class="stock-count" id="stockCountFreezer">0</span>
+            </div>
+            <div class="stock-selection-actions" data-location="freezer">
+              <button class="stock-delete-selected" data-location="freezer" hidden>
+                🗑️ Supprimer la sélection
+              </button>
             </div>
 
             <div class="stock-list" id="stockFreezer">
