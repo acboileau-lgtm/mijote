@@ -3550,6 +3550,46 @@ dialog form {
         display: block;
     }
 
+    /* ------------------------------------------
+       STOCK — TABLEAU ADAPTÉ AU MOBILE
+       ------------------------------------------ */
+
+    .stock-header,
+    .stock-item {
+        grid-template-columns:
+            42px 58px minmax(0, 1fr) 90px 34px;
+        column-gap: 0;
+        width: 100%;
+    }
+
+    .stock-header {
+        font-size: 11px;
+        padding-bottom: 12px;
+    }
+
+    .stock-item {
+        font-size: 13px;
+        line-height: 1.2;
+        min-width: 0;
+    }
+
+    .stock-name {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stock-expiry {
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .stock-checkbox {
+        width: 18px;
+        height: 18px;
+    }
+
 }
 
 /* ==================================================
