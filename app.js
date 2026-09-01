@@ -4244,6 +4244,7 @@ async function geocodeWeatherCity(city) {
 // ==================================================
 
 document.addEventListener("click", (e) => {
+
   const button = e.target.closest("[data-stock-nav]");
   if (!button) return;
 
@@ -4252,11 +4253,22 @@ document.addEventListener("click", (e) => {
 
   if (!target) return;
 
+  // 📱 Sur mobile : afficher uniquement la zone sélectionnée
+  document.querySelectorAll(".stock-location").forEach(section => {
+    section.classList.remove("active");
+  });
+
+  target.closest(".stock-location")?.classList.add("active");
+
+  // Faire défiler jusqu'à la zone
   target.scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
 });
+
+
+
 
 // ==================================================
 // STOCK — SÉLECTION POUR SUPPRESSION
