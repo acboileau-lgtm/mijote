@@ -4253,12 +4253,19 @@ document.addEventListener("click", (e) => {
 
   if (!target) return;
 
-  // 📱 Sur mobile : afficher uniquement la zone sélectionnée
+  // 📱 Affichage de la zone sélectionnée
   document.querySelectorAll(".stock-location").forEach(section => {
     section.classList.remove("active");
   });
 
   target.closest(".stock-location")?.classList.add("active");
+
+  // 🔘 Mise à jour du bouton actif
+  document.querySelectorAll(".stock-nav-button").forEach(navButton => {
+    navButton.classList.remove("active");
+  });
+
+  button.classList.add("active");
 
   // Faire défiler jusqu'à la zone
   target.scrollIntoView({
