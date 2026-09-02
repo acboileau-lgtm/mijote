@@ -3555,34 +3555,49 @@ dialog form {
        ------------------------------------------ */
 
     .stock-header,
+    .stock-product,
+    .stock-table-header,
     .stock-item {
         grid-template-columns:
             42px 58px minmax(0, 1fr) 90px 34px;
-        column-gap: 0;
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        column-gap: 0;
     }
 
-    .stock-header {
+    .stock-header,
+    .stock-table-header {
         font-size: 11px;
         padding-bottom: 12px;
     }
 
+    .stock-product,
     .stock-item {
         font-size: 13px;
         line-height: 1.2;
         min-width: 0;
     }
 
-    .stock-name {
+    .stock-qty,
+    .stock-unit,
+    .stock-name,
+    .stock-expiry,
+    .stock-select {
         min-width: 0;
-        white-space: nowrap;
+    }
+
+    .stock-name {
         overflow: hidden;
+        white-space: nowrap;
         text-overflow: ellipsis;
     }
 
     .stock-expiry {
         font-size: 12px;
         white-space: nowrap;
+        overflow: hidden;
     }
 
     .stock-checkbox {
@@ -3590,108 +3605,180 @@ dialog form {
         height: 18px;
     }
 
-}
-
-/* ==================================================
+    /* ==================================================
    STOCK — TABLEAU PRODUITS
    ================================================== */
 
 
-.stock-header,
-.stock-product,
-.stock-table-header,
-.stock-item {
-    display: grid;
-    grid-template-columns:
-        80px 140px minmax(180px, 1fr) 180px 45px;
-    column-gap: 0;
-    align-items: center;
-    width: 100%;
-    box-sizing: border-box;
-}
+    .stock-header,
+    .stock-product,
+    .stock-table-header,
+    .stock-item {
+        display: grid;
+        grid-template-columns:
+            80px 140px minmax(180px, 1fr) 180px 45px;
+        column-gap: 0;
+        align-items: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
 
-.stock-select {
-    grid-column: 5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    .stock-select {
+        grid-column: 5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-.stock-checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
+    .stock-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
 
-.stock-selection-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin: 8px 0;
-}
+    .stock-selection-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin: 8px 0;
+    }
 
-.stock-delete-selected {
-    padding: 7px 14px;
-    border: 1px solid #c44;
-    border-radius: 6px;
-    background: white;
-    color: #b33;
-    cursor: pointer;
-}
+    .stock-delete-selected {
+        padding: 7px 14px;
+        border: 1px solid #c44;
+        border-radius: 6px;
+        background: white;
+        color: #b33;
+        cursor: pointer;
+    }
 
-.stock-delete-selected:hover {
-    background: #f8eeee;
-}
+    .stock-delete-selected:hover {
+        background: #f8eeee;
+    }
 
-/* En-tête */
-.stock-header {
-    padding: 3px 0 14px;
-    border-bottom: 1px solid #ddd;
-    font-size: 12px;
-    line-height: 0.8;
-}
+    /* En-tête */
+    .stock-header {
+        padding: 3px 0 14px;
+        border-bottom: 1px solid #ddd;
+        font-size: 12px;
+        line-height: 0.8;
+    }
 
-/* Chaque ligne */
-.stock-item {
-    padding: 1px 0;
-    margin: 0;
-    font-size: 14px;
-    line-height: 0.8;
-}
+    /* Chaque ligne */
+    .stock-item {
+        padding: 1px 0;
+        margin: 0;
+        font-size: 14px;
+        line-height: 0.8;
+    }
 
-/* Colonnes */
-.stock-qty {
-    grid-column: 1;
-}
+    /* Colonnes */
+    .stock-qty {
+        grid-column: 1;
+    }
 
-.stock-unit {
-    grid-column: 2;
-}
+    .stock-unit {
+        grid-column: 2;
+    }
 
-.stock-name {
-    grid-column: 3;
-    min-width: 0;
-    white-space: nowrap;
-}
+    .stock-name {
+        grid-column: 3;
+        min-width: 0;
+        white-space: nowrap;
+    }
 
-.stock-expiry {
-    grid-column: 4;
-    white-space: nowrap;
-}
+    .stock-expiry {
+        grid-column: 4;
+        white-space: nowrap;
+    }
 
-/* Tableau */
-.stock-table {
-    width: 100%;
-}
+    /* Tableau */
+    .stock-table {
+        width: 100%;
+    }
 
-/* ==================================================
+    /* ==================================================
    STOCK — NAVIGATION RAPIDE
    ================================================== */
 
-.stock-nav-button {
-    cursor: pointer;
+    .stock-nav-button {
+        cursor: pointer;
+    }
+
+    .stock-nav-button.active {
+        background: #587363;
+        color: white;
+    }
 }
 
-.stock-nav-button.active {
-    background: #587363;
-    color: white;
+/* ==================================================
+   STOCK — TABLEAU MOBILE
+   ================================================== */
+
+@media (max-width: 800px) {
+
+    .stock-header,
+    .stock-product,
+    .stock-table-header,
+    .stock-item {
+        display: grid;
+        grid-template-columns: 40px 70px minmax(0, 1fr) 100px 34px;
+        column-gap: 6px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        column-gap: 0;
+    }
+
+    .stock-header,
+    .stock-table-header {
+        font-size: 11px;
+        padding-bottom: 12px;
+    }
+
+    .stock-product,
+    .stock-item {
+        font-size: 13px;
+        line-height: 1.2;
+        min-width: 0;
+    }
+
+    .stock-qty,
+    .stock-unit,
+    .stock-name,
+    .stock-expiry,
+    .stock-select {
+        min-width: 0;
+    }
+
+    .stock-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .stock-expiry {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .stock-select {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .stock-checkbox {
+        width: 18px;
+        height: 18px;
+    }
+
+    .stock-location,
+    .stock-list,
+    .stock-table {
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
 }
