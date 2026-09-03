@@ -3466,7 +3466,18 @@ dialog form {
 
 /* Carte d'un produit */
 
-
+.stock-header,
+.stock-product,
+.stock-table-header,
+.stock-item {
+    display: grid;
+    grid-template-columns:
+        70px 110px minmax(0, 1fr) 130px 45px;
+    column-gap: 10px;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
 
 .stock-item-name {
     margin: 0 0 5px;
@@ -3544,6 +3555,8 @@ dialog form {
     .stock-location {
         display: none;
         min-height: 220px;
+        min-width: 0;
+        max-width: 100%;
     }
 
     .stock-location.active {
@@ -3551,30 +3564,32 @@ dialog form {
     }
 
     /* ------------------------------------------
-       STOCK — TABLEAU ADAPTÉ AU MOBILE
+       TABLEAU STOCK — MOBILE
        ------------------------------------------ */
 
     .stock-header,
-    .stock-product,
-    .stock-table-header,
     .stock-item {
+        display: grid;
         grid-template-columns:
-            42px 58px minmax(0, 1fr) 90px 34px;
+            40px 70px minmax(0, 1fr) 100px 34px;
+        column-gap: 0;
+        align-items: center;
         width: 100%;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
-        column-gap: 0;
     }
 
-    .stock-header,
-    .stock-table-header {
+    .stock-header {
+        padding: 3px 0 14px;
+        border-bottom: 1px solid #ddd;
         font-size: 11px;
-        padding-bottom: 12px;
+        line-height: 1.2;
     }
 
-    .stock-product,
     .stock-item {
+        padding: 1px 0;
+        margin: 0;
         font-size: 13px;
         line-height: 1.2;
         min-width: 0;
@@ -3589,38 +3604,18 @@ dialog form {
     }
 
     .stock-name {
+        grid-column: 3;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
     }
 
     .stock-expiry {
+        grid-column: 4;
         font-size: 12px;
         white-space: nowrap;
         overflow: hidden;
-    }
-
-    .stock-checkbox {
-        width: 18px;
-        height: 18px;
-    }
-
-    /* ==================================================
-   STOCK — TABLEAU PRODUITS
-   ================================================== */
-
-
-    .stock-header,
-    .stock-product,
-    .stock-table-header,
-    .stock-item {
-        display: grid;
-        grid-template-columns:
-            80px 140px minmax(180px, 1fr) 180px 45px;
-        column-gap: 0;
-        align-items: center;
-        width: 100%;
-        box-sizing: border-box;
+        text-overflow: ellipsis;
     }
 
     .stock-select {
@@ -3636,149 +3631,25 @@ dialog form {
         cursor: pointer;
     }
 
-    .stock-selection-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin: 8px 0;
-    }
-
-    .stock-delete-selected {
-        padding: 7px 14px;
-        border: 1px solid #c44;
-        border-radius: 6px;
-        background: white;
-        color: #b33;
-        cursor: pointer;
-    }
-
-    .stock-delete-selected:hover {
-        background: #f8eeee;
-    }
-
-    /* En-tête */
-    .stock-header {
-        padding: 3px 0 14px;
-        border-bottom: 1px solid #ddd;
-        font-size: 12px;
-        line-height: 0.8;
-    }
-
-    /* Chaque ligne */
-    .stock-item {
-        padding: 1px 0;
-        margin: 0;
-        font-size: 14px;
-        line-height: 0.8;
-    }
-
-    /* Colonnes */
-    .stock-qty {
-        grid-column: 1;
-    }
-
-    .stock-unit {
-        grid-column: 2;
-    }
-
-    .stock-name {
-        grid-column: 3;
-        min-width: 0;
-        white-space: nowrap;
-    }
-
-    .stock-expiry {
-        grid-column: 4;
-        white-space: nowrap;
-    }
-
-    /* Tableau */
+    .stock-list,
     .stock-table {
         width: 100%;
-    }
-
-    /* ==================================================
-   STOCK — NAVIGATION RAPIDE
-   ================================================== */
-
-    .stock-nav-button {
-        cursor: pointer;
-    }
-
-    .stock-nav-button.active {
-        background: #587363;
-        color: white;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 }
 
-/* ==================================================
-   STOCK — TABLEAU MOBILE
-   ================================================== */
 
-@media (max-width: 800px) {
+/* =========================================================
+   STOCK — NAVIGATION RAPIDE
+   ========================================================= */
 
-    .stock-header,
-    .stock-product,
-    .stock-table-header,
-    .stock-item {
-        display: grid;
-        grid-template-columns: 40px 70px minmax(0, 1fr) 100px 34px;
-        column-gap: 6px;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-        column-gap: 0;
-    }
+.stock-nav-button {
+    cursor: pointer;
+}
 
-    .stock-header,
-    .stock-table-header {
-        font-size: 11px;
-        padding-bottom: 12px;
-    }
-
-    .stock-product,
-    .stock-item {
-        font-size: 13px;
-        line-height: 1.2;
-        min-width: 0;
-    }
-
-    .stock-qty,
-    .stock-unit,
-    .stock-name,
-    .stock-expiry,
-    .stock-select {
-        min-width: 0;
-    }
-
-    .stock-name {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    .stock-expiry {
-        font-size: 12px;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    .stock-select {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .stock-checkbox {
-        width: 18px;
-        height: 18px;
-    }
-
-    .stock-location,
-    .stock-list,
-    .stock-table {
-        min-width: 0;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
+.stock-nav-button.active {
+    background: #587363;
+    color: white;
 }
