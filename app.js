@@ -3520,28 +3520,39 @@ function openModal(type, payload = {}) {
         placeholder="Ex. Champignons"
       >
     </div>
-    
+
     <div class="field-row">
-    
+
       <div class="field">
         <label>Quantité</label>
         <input
           name="qty"
+          type="number"
+          min="0"
+          step="any"
           value="1"
         >
       </div>
-    
+
       <div class="field">
-        <label>Ranger dans</label>
-        <select name="location" required>
-          <option value="fridge">🧊 Frigo</option>
-          <option value="pantry">🥫 Placard</option>
-          <option value="freezer">❄️ Congélateur</option>
-        </select>
+        <label>Unité</label>
+        <input
+          name="unit"
+          placeholder="Ex. pièces, g, kg, L..."
+        >
       </div>
-    
+
     </div>
-    
+
+    <div class="field">
+      <label>Ranger dans</label>
+      <select name="location" required>
+        <option value="fridge">🧊 Frigo</option>
+        <option value="pantry">🥫 Placard</option>
+        <option value="freezer">❄️ Congélateur</option>
+      </select>
+    </div>
+
     <div class="field">
       <label>Date de péremption / DLC</label>
       <input
