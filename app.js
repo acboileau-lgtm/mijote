@@ -469,7 +469,11 @@ function parseIngredientText(value) {
   ) {
     category = "Boulangerie";
   } else if (
-    /huile|vinaigre|farine|sucre|sel|poivre|riz|pâtes|pates|coulis|épices|epices|moutarde|bouillon/.test(lower)
+    /spaghetti|tagliatelle|tagliatelles|linguine|penne|fusilli|macaroni|farfalle|coquillettes|lasagnes|ravioli|ravioles|orzo|pâtes|pates/.test(lower)
+  ) {
+    category = "Pâtes";
+  } else if (
+    /huile|vinaigre|farine|sucre|sel|poivre|riz|coulis|épices|epices|moutarde|bouillon/.test(lower)
   ) {
     category = "Épicerie";
   }
@@ -1297,6 +1301,7 @@ function addIngredientLine(value = {}) {
             <option value="Fromages">🧀 Fromages</option>
             <option value="Produits frais">🥛 Produits frais</option>
             <option value="Épicerie">🥫 Épicerie</option>
+            <option value="Pâtes">🍝 Pâtes</option>
             <option value="Boulangerie">🍞 Boulangerie</option>
             <option value="Surgelés">🧊 Surgelés</option>
             <option value="Boissons">🥤 Boissons</option>
@@ -2366,14 +2371,93 @@ function normalizeShoppingUnit(value) {
   return aliases[unit] || unit;
 }
 
+function normalizeShoppingIngredientForGrouping(value) {
+  const normalized = normalizeShoppingIngredient(value);
+
+  const aliases = {
+    "tomates": "tomate"
+  };
+
+  return aliases[normalized] || normalized;
+}
 
 function shoppingItemKey(item) {
-
   return [
     item.group || "Autres",
-    normalizeShoppingIngredient(item.name),
+    normalizeShoppingIngredientForGrouping(item.name),
     normalizeShoppingUnit(item.unit)
   ].join("|");
+}
+
+function getAllStockItems() {
+  return [
+    ...(state.fridge || []),
+    ...(state.pantry || []),
+    ...(state.freezer || [])
+  ];
+}
+
+function getStockForIngredient(name, unit) {
+  const normalizedName =
+    normalizeShoppingIngredientForGrouping(name);
+  const normalizedUnit = normalizeShoppingUnit(unit);
+
+  const stockItems = getAllStockItems().filter(item => {
+    const stockName =
+      normalizeShoppingIngredientForGrouping(item.name);
+    const stockUnit = normalizeShoppingUnit(item.unit);
+
+    return (
+      stockName === normalizedName &&
+      (
+        stockUnit === normalizedUnit ||
+        stockUnit === ""
+      )
+    );
+  });
+
+  // Aucun produit correspondant dans le stock
+  if (!stockItems.length) {
+    return {
+      found: false,
+      covered: false,
+      quantity: 0
+    };
+  }
+
+  // Si au moins un stock n'a pas de quantité,
+  // on considère que le produit est disponible.
+  const hasUnquantifiedStock = stockItems.some(item =>
+    item.qty === null ||
+    item.qty === undefined ||
+    String(item.qty).trim() === ""
+  );
+
+  if (hasUnquantifiedStock) {
+    return {
+      found: true,
+      covered: true,
+      quantity: null
+    };
+  }
+
+  // Sinon, on additionne les quantités disponibles
+  // dans Frigo + Placard + Congélateur.
+  let totalQuantity = 0;
+
+  stockItems.forEach(item => {
+    const quantity = Number(item.qty);
+
+    if (!Number.isNaN(quantity)) {
+      totalQuantity += quantity;
+    }
+  });
+
+  return {
+    found: true,
+    covered: false,
+    quantity: totalQuantity
+  };
 }
 
 async function generateShoppingFromPlanning() {
@@ -2388,7 +2472,18 @@ async function generateShoppingFromPlanning() {
 
   Object.values(state.meals).forEach(meal => {
 
-    if (!meal || meal.type !== "recipe") {
+    if (!meal) {
+      return;
+    }
+
+    // Ancien format : l'ID de recette est directement une chaîne
+    if (typeof meal === "string") {
+      recipeIds.push(String(meal));
+      return;
+    }
+
+    // Nouveau format : objet contenant recipeId ou recipeIds
+    if (meal.type !== "recipe") {
       return;
     }
 
@@ -2412,6 +2507,13 @@ async function generateShoppingFromPlanning() {
   console.log(
     "🍽️ Recettes du planning :",
     uniqueRecipeIds
+  );
+
+  console.log(
+    "🎯 ID RAVIOLES RECHERCHÉ :",
+    uniqueRecipeIds.includes(
+      "faef95e3-3164-4562-97df-e7827718f270"
+    )
   );
 
   if (uniqueRecipeIds.length === 0) {
@@ -2439,7 +2541,7 @@ async function generateShoppingFromPlanning() {
   );
 
   // --------------------------------------------------
-  // 3. Regroupement
+  // 3. Regroupement des besoins
   // --------------------------------------------------
 
   const grouped = new Map();
@@ -2479,9 +2581,7 @@ async function generateShoppingFromPlanning() {
     const key =
       [
         category,
-        normalizeShoppingIngredient(
-          ingredient
-        ),
+        normalizeShoppingIngredientForGrouping(ingredient),
         normalizeShoppingUnit(unit)
       ].join("|");
 
@@ -2512,6 +2612,73 @@ async function generateShoppingFromPlanning() {
       existing.qty += item.quantity;
     }
 
+  });
+
+  // --------------------------------------------------
+  // 3b. Vérification du stock
+  // --------------------------------------------------
+
+  const shoppingFromStock = new Map();
+
+  grouped.forEach(item => {
+
+    const stock =
+      getStockForIngredient(
+        item.name,
+        item.unit
+      );
+
+    console.log("🔎 VÉRIFICATION STOCK :", {
+      recette: item.name,
+      quantiteRecette: item.qty,
+      uniteRecette: item.unit,
+      stock: stock
+    });
+
+    // Produit présent dans le stock
+    // sans quantité renseignée :
+    // on considère qu'il est disponible.
+    if (stock.covered) {
+      return;
+    }
+
+    // Aucune quantité dans la recette :
+    // si le produit n'est pas en stock,
+    // on le conserve tel quel.
+    if (typeof item.qty !== "number") {
+      shoppingFromStock.set(
+        shoppingItemKey(item),
+        item
+      );
+      return;
+    }
+
+    // Quantité disponible dans le stock
+    const remaining =
+      item.qty - stock.quantity;
+
+    // Stock suffisant
+    if (remaining <= 0) {
+      return;
+    }
+
+    // Stock insuffisant :
+    // on ne demande que le complément.
+    item.qty = remaining;
+
+    shoppingFromStock.set(
+      shoppingItemKey(item),
+      item
+    );
+  });
+
+  grouped.clear();
+
+  shoppingFromStock.forEach(item => {
+    grouped.set(
+      shoppingItemKey(item),
+      item
+    );
   });
 
   // --------------------------------------------------
@@ -2658,9 +2825,17 @@ function renderShopping() {
   $("#shoppingList").innerHTML = groups
     .map(group => {
 
-      const items = state.shopping.filter(
-        item => (item.group || "Autres") === group
-      );
+      const items = state.shopping
+        .filter(
+          item => (item.group || "Autres") === group
+        )
+        .sort((a, b) =>
+          String(a.name || "").localeCompare(
+            String(b.name || ""),
+            "fr",
+            { sensitivity: "base" }
+          )
+        );
 
       return `
         <section class="shopping-group">
@@ -2672,17 +2847,28 @@ function renderShopping() {
               class="shopping-item ${item.checked ? "checked" : ""}"
             >
     
-              <input
-                type="checkbox"
-                data-check-item="${item.id}"
-                ${item.checked ? "checked" : ""}
-              >
-    
-              <span>${item.name}</span>
-    
-              <small>
-                ${formatShoppingQuantity(item)}
-              </small>
+              <button
+  type="button"
+  class="shopping-delete"
+  data-delete-shopping="${item.id}"
+  title="Supprimer"
+>
+  🗑️
+</button>
+
+<input
+  type="checkbox"
+  data-check-item="${item.id}"
+  ${item.checked ? "checked" : ""}
+>
+
+<span>${item.name}</span>
+
+<small>
+  ${formatShoppingQuantity(item)}
+</small>
+
+
     
             </label>
           `).join("")}
@@ -3501,10 +3687,50 @@ function openModal(type, payload = {}) {
     });
 
   } else if (type === "shopping") {
-    eyebrow.textContent = "LISTE DE COURSES"; title.textContent = "Ajouter un article";
-    fields.innerHTML = `<div class="field" ><label>Article</label><input name="name" required placeholder="Ex. Pain complet"></div>
-      <div class="field-row"><div class="field"><label>Quantité</label><input name="qty" value="1"></div>
-      <div class="field"><label>Rayon</label><select name="group"><option>Fruits & légumes</option><option>Épicerie</option><option>Crèmerie</option><option>Boucherie</option><option>Poissonnerie</option></select></div></div>`;
+    eyebrow.textContent = "LISTE DE COURSES";
+    title.textContent = "Ajouter un article";
+
+    fields.innerHTML = `
+    <div class="field">
+      <label>Article</label>
+      <input
+        name="name"
+        required
+        placeholder="Ex. Pain complet"
+      >
+    </div>
+
+    <div class="field-row">
+
+      <div class="field">
+        <label>Quantité</label>
+        <input name="qty" value="1">
+      </div>
+
+      <div class="field">
+        <label>Rayon</label>
+
+        <select name="group">
+
+          <option>Fruits & légumes</option>
+          <option>Viandes</option>
+          <option>Poissons</option>
+          <option>Fromages</option>
+          <option>Produits frais</option>
+          <option>Épicerie</option>
+          <option>Pâtes</option>
+          <option>Boulangerie</option>
+          <option>Surgelés</option>
+          <option>Boissons</option>
+          <option>Condiments</option>
+          <option>Autres</option>
+
+        </select>
+
+      </div>
+
+    </div>
+  `;
 
   } else if (type === "stock") {
 
@@ -4815,6 +5041,41 @@ document.addEventListener("change", e => {
   save();
   renderShopping();
 });
+
+document.addEventListener("click", e => {
+
+  const deleteButton =
+    e.target.closest("[data-delete-shopping]");
+
+  if (!deleteButton) {
+    return;
+  }
+
+  const itemId =
+    deleteButton.dataset.deleteShopping;
+
+  const item =
+    state.shopping.find(
+      i => String(i.id) === String(itemId)
+    );
+
+  if (!item) {
+    console.warn(
+      "⚠️ Article introuvable :",
+      itemId
+    );
+    return;
+  }
+
+  state.shopping =
+    state.shopping.filter(
+      i => String(i.id) !== String(itemId)
+    );
+
+  save();
+  renderShopping();
+});
+
 
 let draggedMealKey = null;
 
