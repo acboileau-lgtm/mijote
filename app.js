@@ -119,10 +119,21 @@ async function save() {
     freezer: undefined
   };
 
-  localStorage.setItem(
-    "mijote-state",
-    JSON.stringify(stateToSave)
-  );
+  try {
+
+    localStorage.setItem(
+      "mijote-state",
+      JSON.stringify(stateToSave)
+    );
+
+  } catch (error) {
+
+    console.warn(
+      "⚠️ Sauvegarde locale impossible :",
+      error
+    );
+
+  }
 
   // Sauvegarde du planning dans Supabase
   try {
@@ -145,6 +156,7 @@ async function save() {
       "❌ Impossible de sauvegarder le planning dans Supabase :",
       error
     );
+
   }
 }
 
