@@ -25,7 +25,10 @@ import {
   addStockItem,
   getStockItems,
   updateStockItem,
-  deleteStockItem
+  getShoppingItems,
+  saveShoppingItem,
+  deleteShoppingItem,
+  deletePlanningShoppingItems
 
 } from "./js/storage.js";
 
@@ -67,6 +70,31 @@ state.shopping ??= [];
 state.recipes ??= [];
 state.meals ??= {};
 
+async function loadShoppingFromSupabase() {
+
+  try {
+
+    const shoppingItems =
+      await getShoppingItems();
+
+    state.shopping = shoppingItems;
+
+    console.log(
+      "🛒 Liste de courses chargée depuis Supabase :",
+      shoppingItems.length,
+      "article(s)"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de charger la liste de courses depuis Supabase :",
+      error
+    );
+
+  }
+}
+
 // Migration des anciennes semaines lundi–dimanche vers mercredi–mardi.
 if (state.weekStart !== "wednesday") {
   const oldToNewDay = { 0: 5, 1: 6, 2: 0, 3: 1, 4: 2, 5: 3, 6: 4 };
@@ -75,7 +103,16 @@ if (state.weekStart !== "wednesday") {
     return [`${oldToNewDay[day]}-${slot}`, recipeId];
   }));
   state.weekStart = "wednesday";
-  localStorage.setItem("mijote-state", JSON.stringify(state));
+  localStorage.setItem(
+    "mijote-state",
+    JSON.stringify({
+      ...state,
+      shopping: undefined,
+      fridge: undefined,
+      pantry: undefined,
+      freezer: undefined
+    })
+  );
 }
 
 // Temporaire : on remplacera complètement ce tableau.
@@ -114,12 +151,21 @@ async function save() {
   // Sauvegarde locale de sécurité
   const stateToSave = {
     ...state,
+    shopping: undefined,
     fridge: undefined,
     pantry: undefined,
     freezer: undefined
   };
 
   try {
+
+    const stateToSave = {
+      ...state,
+      shopping: undefined,
+      fridge: undefined,
+      pantry: undefined,
+      freezer: undefined
+    };
 
     localStorage.setItem(
       "mijote-state",
@@ -2812,7 +2858,13 @@ async function generateShoppingFromPlanning() {
     ...[...grouped.values()]
   ];
 
-  save();
+  // ☁️ Sauvegarde des articles issus du planning dans Supabase
+  await deletePlanningShoppingItems();
+
+  for (const item of grouped.values()) {
+    await saveShoppingItem(item);
+  }
+
   renderShopping();
 
   showToast(
@@ -4406,7 +4458,37 @@ $("#modalForm").addEventListener("submit", async e => {
     showToast("📝 Note ajoutée");
 
   } else if (type === "shopping") {
-    state.shopping.push({ id: Date.now(), group: data.group, name: data.name, qty: data.qty, checked: false }); renderShopping(); showToast("Article ajouté à la liste");
+    const item = {
+      id: Date.now(),
+      group: data.group,
+      name: data.name,
+      qty: data.qty,
+      unit: null,
+      checked: false,
+      source: "manual"
+    };
+
+    try {
+
+      await saveShoppingItem(item);
+
+      state.shopping.push(item);
+
+      renderShopping();
+
+      showToast("Article ajouté à la liste");
+
+    } catch (error) {
+
+      console.error(
+        "❌ Impossible d'ajouter l'article aux courses :",
+        error
+      );
+
+      showToast(
+        "Impossible d'ajouter l'article"
+      );
+    }
   } else {
 
     // ==================================================
@@ -4953,24 +5035,7 @@ document.addEventListener("click", async (e) => {
       nav.dataset.view ||
       nav.dataset.viewLink;
 
-    if (targetView === "shopping") {
 
-      try {
-        await generateShoppingFromPlanning();
-      } catch (error) {
-
-        console.error(
-          "❌ Erreur génération courses :",
-          error
-        );
-
-        showToast(
-          "Impossible de générer les courses"
-        );
-
-        return;
-      }
-    }
 
     navigate(targetView);
   }
@@ -5106,7 +5171,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-document.addEventListener("change", e => {
+document.addEventListener("change", async e => {
 
   if (!e.target.matches("[data-check-item]")) {
     return;
@@ -5126,11 +5191,29 @@ document.addEventListener("change", e => {
 
   item.checked = e.target.checked;
 
-  save();
+  try {
+
+    await saveShoppingItem(item);
+
+    console.log(
+      "☁️ État de l'article sauvegardé dans Supabase :",
+      item.name,
+      item.checked
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de sauvegarder l'état de l'article :",
+      error
+    );
+
+  }
+
   renderShopping();
 });
 
-document.addEventListener("click", e => {
+document.addEventListener("click", async e => {
 
   const deleteButton =
     e.target.closest("[data-delete-shopping]");
@@ -5155,13 +5238,30 @@ document.addEventListener("click", e => {
     return;
   }
 
-  state.shopping =
-    state.shopping.filter(
-      i => String(i.id) !== String(itemId)
+  try {
+
+    await deleteShoppingItem(itemId);
+
+    state.shopping =
+      state.shopping.filter(
+        i => String(i.id) !== String(itemId)
+      );
+
+    renderShopping();
+
+    showToast("🗑️ Article supprimé");
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de supprimer l'article :",
+      error
     );
 
-  save();
-  renderShopping();
+    showToast(
+      "Impossible de supprimer l'article"
+    );
+  }
 });
 
 
@@ -5302,7 +5402,25 @@ $("#uncheckAll").addEventListener("click", async () => {
     item.checked = false;
   });
 
-  await save();
+  try {
+
+    for (const item of state.shopping) {
+      await saveShoppingItem(item);
+    }
+
+    console.log(
+      "☁️ Toutes les courses ont été décochées dans Supabase"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de sauvegarder les articles dans Supabase :",
+      error
+    );
+
+  }
+
   renderShopping();
 
   showToast("🛒 Toutes les courses sont décochées");
@@ -5314,11 +5432,30 @@ $("#checkAll").addEventListener("click", async () => {
     item.checked = true;
   });
 
-  await save();
+  try {
+
+    for (const item of state.shopping) {
+      await saveShoppingItem(item);
+    }
+
+    console.log(
+      "☁️ Toutes les courses ont été cochées dans Supabase"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Impossible de sauvegarder les articles dans Supabase :",
+      error
+    );
+
+  }
+
   renderShopping();
 
   showToast("✅ Toutes les courses sont cochées");
 });
+
 
 
 $("#clearWeek").addEventListener("click", () => { state.meals = {}; save(); renderWeek(); showToast("La semaine est prête à être recomposée"); });
@@ -5496,6 +5633,9 @@ async function initializeApp() {
     .map(createRecipe);
 
   await loadPlanningFromSupabase();
+
+  // 🛒 Chargement de la liste de courses depuis Supabase
+  await loadShoppingFromSupabase();
 
   // 📝 Chargement des notes du planning
   planningNotes = await getPlanningNotes();

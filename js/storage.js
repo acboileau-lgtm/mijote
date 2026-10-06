@@ -20,6 +20,9 @@ const PRODUCTS_ENDPOINT =
 const STOCK_ITEMS_ENDPOINT =
     `${SUPABASE_URL}/rest/v1/stock_items`;
 
+const SHOPPING_ITEMS_ENDPOINT =
+    `${SUPABASE_URL}/rest/v1/shopping_items`;
+
 
 
 // ======================================================
@@ -1032,6 +1035,182 @@ async function deleteStockItem(id) {
 }
 
 // ======================================================
+// LISTE DE COURSES — SUPABASE
+// ======================================================
+
+async function getShoppingItems() {
+
+    console.log("🛒 Chargement de la liste de courses depuis Supabase...");
+
+    const response = await fetch(
+        `${SHOPPING_ITEMS_ENDPOINT}?select=*&order=created_at.asc`,
+        {
+            method: "GET",
+            headers: getHeaders()
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur lecture liste de courses :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de charger la liste de courses (${response.status})`
+        );
+    }
+
+    const rows = await response.json();
+
+    console.log(
+        `✅ ${rows.length} article(s) de courses chargé(s)`
+    );
+
+    return rows.map(row => ({
+        id: row.id,
+        group: row.group_name || "Autres",
+        name: row.name,
+        qty: row.qty,
+        unit: row.unit,
+        checked: row.checked,
+        source: row.source
+    }));
+}
+
+
+async function saveShoppingItem(item) {
+
+    console.log(
+        "🛒 Sauvegarde article courses :",
+        item
+    );
+
+    const response = await fetch(
+        SHOPPING_ITEMS_ENDPOINT,
+        {
+            method: "POST",
+
+            headers: getHeaders({
+                "Prefer": "resolution=merge-duplicates,return=representation"
+            }),
+
+            body: JSON.stringify({
+                id: String(item.id),
+                group_name: item.group || "Autres",
+                name: item.name,
+                qty: item.qty ?? null,
+                unit: item.unit ?? null,
+                checked: item.checked ?? false,
+                source: item.source || "manual"
+            })
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur sauvegarde article courses :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de sauvegarder l'article (${response.status})`
+        );
+    }
+
+    const result = await response.json();
+
+    console.log(
+        "✅ Article courses sauvegardé :",
+        result[0]
+    );
+
+    return result[0];
+}
+
+
+async function deleteShoppingItem(id) {
+
+    console.log(
+        "🗑️ Suppression article courses :",
+        id
+    );
+
+    const response = await fetch(
+        `${SHOPPING_ITEMS_ENDPOINT}?id=eq.${encodeURIComponent(id)}`,
+        {
+            method: "DELETE",
+
+            headers: getHeaders({
+                "Prefer": "return=minimal"
+            })
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur suppression article courses :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de supprimer l'article (${response.status})`
+        );
+    }
+
+    console.log(
+        "✅ Article courses supprimé :",
+        id
+    );
+}
+
+async function deletePlanningShoppingItems() {
+
+    console.log(
+        "🗑️ Suppression des articles courses issus du planning..."
+    );
+
+    const response = await fetch(
+        `${SHOPPING_ITEMS_ENDPOINT}?source=eq.planning`,
+        {
+            method: "DELETE",
+
+            headers: getHeaders({
+                "Prefer": "return=minimal"
+            })
+        }
+    );
+
+    if (!response.ok) {
+
+        const errorText = await response.text();
+
+        console.error(
+            "❌ Erreur suppression courses planning :",
+            errorText
+        );
+
+        throw new Error(
+            `Impossible de supprimer les courses du planning (${response.status})`
+        );
+    }
+
+    console.log(
+        "✅ Articles courses du planning supprimés"
+    );
+}
+
+
+// ======================================================
 // EXPORTS
 // ======================================================
 
@@ -1055,4 +1234,8 @@ export {
     getStockItems,
     updateStockItem,
     deleteStockItem,
+    getShoppingItems,
+    saveShoppingItem,
+    deleteShoppingItem,
+    deletePlanningShoppingItems,
 };
