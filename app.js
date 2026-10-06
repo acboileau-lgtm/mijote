@@ -1136,6 +1136,22 @@ recipeForm.addEventListener("submit", async (event) => {
 
 
   // ==========================================
+  // Demander si on veut planifier
+  // ==========================================
+
+  let shouldPlanRecipe = false;
+
+  if (!recipeId) {
+
+    shouldPlanRecipe = confirm(
+      `🍽️ Recette ajoutée !\n\n` +
+      `"${recipe.name}"\n\n` +
+      `Voulez-vous planifier ce repas maintenant ?`
+    );
+  }
+
+
+  // ==========================================
   // Réinitialisation du formulaire
   // ==========================================
 
@@ -1160,10 +1176,26 @@ recipeForm.addEventListener("submit", async (event) => {
   equipmentList.innerHTML = "";
 
 
-  // Ferme la fenêtre
+  // Ferme la fenêtre recette
   recipeModal.classList.add(
     "hidden"
   );
+
+
+  // ==========================================
+  // Ouvrir automatiquement la planification
+  // ==========================================
+
+  if (shouldPlanRecipe) {
+
+    openModal(
+      "plan",
+      {
+        recipe: recipe
+      }
+    );
+  }
+
 });
 
 
@@ -2092,6 +2124,18 @@ function renderMealCard(planned, key) {
         data-open-recipe="${recipe.id}"
       >
         <strong>${recipe.name}</strong>
+
+        ${recipe.photo
+        ? `
+            <img
+              src="${recipe.photo}"
+              class="meal-card-photo"
+              alt=""
+            >
+          `
+        : ""
+      }
+
         <small>
           ${recipe.emoji}
           ${getTotalTime(recipe)} min ·
@@ -2122,46 +2166,57 @@ function renderMealCard(planned, key) {
     }
 
     return `
-    <div
-      class="meal-card ${recipes[0].veggie
+      <div
+        class="meal-card ${recipes[0].veggie
         ? "sage"
         : getTotalTime(recipes[0]) <= 30
           ? "orange"
           : ""
       }"
-      draggable="true"
-      data-drag-meal="${key}"
-    >
+        draggable="true"
+        data-drag-meal="${key}"
+      >
 
-      ${recipes.map(recipe => `
-        <div
-          class="planned-recipe"
-          data-open-recipe="${recipe.id}"
-        >
-          <strong>${recipe.name}</strong>
-          <small>
-            ${recipe.emoji || "🍽️"}
-            ${getTotalTime(recipe)} min ·
-            ${recipe.portions} pers.
-          </small>
-        </div>
-      `).join("")}
+        ${recipes.map(recipe => `
+          <div
+            class="planned-recipe"
+            data-open-recipe="${recipe.id}"
+          >
+            <strong>${recipe.name}</strong>
 
-      ${recipes.length < 2 ? `
-        <button
-  type="button"
-  class="add-second-recipe"
-  data-add-second-recipe="${key}"
-  aria-label="Ajouter une deuxième recette"
-  title="Ajouter une deuxième recette"
->
-  ＋
-</button>
-      ` : ""}
-    </div>
-  `;
+            ${recipe.photo
+          ? `
+                <img
+                  src="${recipe.photo}"
+                  class="meal-card-photo"
+                  alt=""
+                >
+              `
+          : ""
+        }
+
+            <small>
+              ${recipe.emoji || "🍽️"}
+              ${getTotalTime(recipe)} min ·
+              ${recipe.portions} pers.
+            </small>
+          </div>
+        `).join("")}
+
+        ${recipes.length < 2 ? `
+          <button
+            type="button"
+            class="add-second-recipe"
+            data-add-second-recipe="${key}"
+            aria-label="Ajouter une deuxième recette"
+            title="Ajouter une deuxième recette"
+          >
+            ＋
+          </button>
+        ` : ""}
+      </div>
+    `;
   }
-
 
   // 🥫 REPAS LIBRE
   if (planned.type === "free") {
@@ -2173,6 +2228,18 @@ function renderMealCard(planned, key) {
         data-drag-meal="${key}"
       >
         <strong>${planned.name}</strong>
+
+        ${planned.photo
+        ? `
+            <img
+              src="${planned.photo}"
+              class="meal-card-photo"
+              alt=""
+            >
+          `
+        : ""
+      }
+
         <small>🥫 Repas libre</small>
       </div>
     `;
@@ -2188,6 +2255,18 @@ function renderMealCard(planned, key) {
         data-drag-meal="${key}"
       >
         <strong>${planned.name}</strong>
+
+        ${planned.photo
+        ? `
+            <img
+              src="${planned.photo}"
+              class="meal-card-photo"
+              alt=""
+            >
+          `
+        : ""
+      }
+
         <small>🏠 Occasion</small>
       </div>
     `;
