@@ -1649,11 +1649,8 @@ async function loadPlanningFromSupabase() {
       );
     }
 
-    // On garde également une copie locale
-    localStorage.setItem(
-      "mijote-state",
-      JSON.stringify(state)
-    );
+    // Le planning Supabase est la source de vérité.
+    // Pas de copie du planning dans localStorage.
 
   } catch (error) {
 
