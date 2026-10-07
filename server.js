@@ -1616,7 +1616,38 @@ RÈGLES IMPORTANTES :
                     })
                     .filter(Boolean);
 
+            // ------------------------------------------
+            // Récupération de la miniature YouTube
+            // ------------------------------------------
 
+            let youtubeVideoId = "";
+
+            if (
+                parsedUrl.hostname === "youtu.be" ||
+                parsedUrl.hostname === "www.youtu.be"
+            ) {
+
+                youtubeVideoId =
+                    parsedUrl.pathname
+                        .replace("/", "")
+                        .trim();
+
+            } else {
+
+                youtubeVideoId =
+                    parsedUrl.searchParams.get("v") ||
+                    (
+                        parsedUrl.pathname.startsWith("/shorts/")
+                            ? parsedUrl.pathname.split("/shorts/")[1].split("/")[0]
+                            : ""
+                    );
+
+            }
+
+            const youtubeImage =
+                youtubeVideoId
+                    ? `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`
+                    : "";
             // ------------------------------------------
             // Recette finale Mijoté
             // ------------------------------------------
@@ -1627,7 +1658,7 @@ RÈGLES IMPORTANTES :
                     data.name || "",
 
                 image:
-                    "",
+                    youtubeImage,
 
                 prepTime:
                     Number(
@@ -1649,7 +1680,7 @@ RÈGLES IMPORTANTES :
 
                 portions:
                     Number(
-                        data.portions || 0
+                        data.portions || 4
                     ),
 
                 ingredients,
