@@ -1,10 +1,13 @@
 import express from "express";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
+import { GoogleGenAI } from "@google/genai";
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const ai = new GoogleGenAI({});
+
 
 
 // ======================================================
@@ -1357,6 +1360,374 @@ app.get(
     }
 );
 
+const youtubeRecipeSchema = {
+    type: "object",
+    properties: {
+
+        name: {
+            type: "string",
+            description: "Nom de la recette"
+        },
+
+        portions: {
+            type: "integer",
+            description:
+                "Nombre de portions. 0 si non indiqué."
+        },
+
+        prepTime: {
+            type: "integer",
+            description:
+                "Temps de préparation en minutes. 0 si non indiqué."
+        },
+
+        cookTime: {
+            type: "integer",
+            description:
+                "Temps de cuisson en minutes. 0 si non indiqué."
+        },
+
+        ingredients: {
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+
+                    quantity: {
+                        type: "string",
+                        description:
+                            "Quantité avec unité. Vide si aucune quantité n'est indiquée."
+                    },
+
+                    name: {
+                        type: "string",
+                        description:
+                            "Nom de l'ingrédient."
+                    }
+                },
+                required: [
+                    "quantity",
+                    "name"
+                ]
+            }
+        },
+
+        steps: {
+            type: "array",
+            items: {
+                type: "string"
+            }
+        },
+
+        notes: {
+            type: "string",
+            description:
+                "Conseils ou astuces réellement présents dans la vidéo."
+        }
+    },
+
+    required: [
+        "name",
+        "portions",
+        "prepTime",
+        "cookTime",
+        "ingredients",
+        "steps",
+        "notes"
+    ]
+};
+
+// ======================================================
+// API IMPORT VIDEO YOUTUBE
+// ======================================================
+
+app.get(
+    "/api/import-video",
+    async (req, res) => {
+
+        try {
+
+            const url =
+                req.query.url;
+
+            if (!url) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "URL YouTube manquante"
+                    });
+            }
+
+
+            // ------------------------------------------
+            // Vérification URL YouTube
+            // ------------------------------------------
+
+            let parsedUrl;
+
+            try {
+
+                parsedUrl =
+                    new URL(url);
+
+            } catch {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "URL invalide"
+                    });
+            }
+
+
+            const isYouTube =
+                parsedUrl.hostname === "youtube.com" ||
+                parsedUrl.hostname === "www.youtube.com" ||
+                parsedUrl.hostname === "youtu.be" ||
+                parsedUrl.hostname === "www.youtu.be";
+
+            if (!isYouTube) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "Cette URL n'est pas une vidéo YouTube."
+                    });
+            }
+
+
+            console.log(
+                "🎬 Analyse Gemini :",
+                parsedUrl.href
+            );
+
+
+            // ------------------------------------------
+            // Prompt Gemini
+            // ------------------------------------------
+
+            const prompt = `
+Tu es l'assistant d'import de recettes de l'application Mijoté.
+
+Analyse attentivement TOUTE la vidéo YouTube :
+
+- ce qui est dit oralement ;
+- ce qui est écrit ou affiché à l'écran ;
+- les ingrédients et quantités visibles ;
+- les actions réalisées ;
+- les durées de cuisson indiquées.
+
+OBJECTIF :
+Créer une recette exploitable directement par Mijoté.
+
+RÈGLES IMPORTANTES :
+
+1. N'invente aucune quantité.
+2. Si une quantité est visible ou prononcée dans la vidéo, récupère-la précisément.
+3. Si aucune quantité n'est disponible, laisse quantity vide.
+4. Ne confonds pas le titre de la vidéo avec les ingrédients réellement utilisés.
+5. Déduis les temps uniquement lorsqu'ils sont explicitement indiqués.
+6. Conserve toutes les étapes importantes dans leur ordre.
+7. Si le nombre de portions n'est pas indiqué, mets 0.
+8. Les ingrédients sans quantité doivent avoir quantity = "".
+9. Sépare toujours la quantité et le nom de l'ingrédient.
+10. Les temps doivent être exprimés en minutes.
+11. Dans notes, indique uniquement les conseils ou astuces réellement présents dans la vidéo.
+12. Ne crée aucun ingrédient qui n'est pas identifiable dans la vidéo.
+13. Si une information est impossible à déterminer, laisse-la vide ou mets 0 selon le champ.
+`;
+
+
+            // ------------------------------------------
+            // Analyse vidéo avec Gemini
+            // ------------------------------------------
+
+            const interaction =
+                await ai.interactions.create({
+
+                    model:
+                        "gemini-3.5-flash-lite",
+
+                    input: [
+
+                        {
+                            type: "text",
+                            text: prompt
+                        },
+
+                        {
+                            type: "video",
+                            uri: parsedUrl.href
+                        }
+                    ],
+
+                    response_format: {
+
+                        type: "text",
+
+                        mime_type:
+                            "application/json",
+
+                        schema:
+                            youtubeRecipeSchema
+                    }
+                });
+
+
+            // ------------------------------------------
+            // Lecture du JSON Gemini
+            // ------------------------------------------
+
+            const data =
+                JSON.parse(
+                    interaction.output_text
+                );
+
+
+            // ------------------------------------------
+            // Conversion des ingrédients
+            // vers le format attendu par Mijoté
+            // ------------------------------------------
+
+            const ingredients =
+                (data.ingredients || [])
+                    .map(item => {
+
+                        const quantity =
+                            String(
+                                item.quantity || ""
+                            ).trim();
+
+                        const name =
+                            String(
+                                item.name || ""
+                            ).trim();
+
+                        return [
+                            quantity,
+                            name
+                        ]
+                            .filter(Boolean)
+                            .join(" ");
+                    })
+                    .filter(Boolean);
+
+
+            // ------------------------------------------
+            // Recette finale Mijoté
+            // ------------------------------------------
+
+            const recipe = {
+
+                name:
+                    data.name || "",
+
+                image:
+                    "",
+
+                prepTime:
+                    Number(
+                        data.prepTime || 0
+                    ),
+
+                cookTime:
+                    Number(
+                        data.cookTime || 0
+                    ),
+
+                totalTime:
+                    Number(
+                        data.prepTime || 0
+                    ) +
+                    Number(
+                        data.cookTime || 0
+                    ),
+
+                portions:
+                    Number(
+                        data.portions || 0
+                    ),
+
+                ingredients,
+
+                steps:
+                    Array.isArray(data.steps)
+                        ? data.steps
+                        : [],
+
+                category:
+                    "",
+
+                notes:
+                    data.notes || "",
+
+                source: {
+
+                    type:
+                        "youtube",
+
+                    value:
+                        parsedUrl.href
+                }
+            };
+
+
+            // ------------------------------------------
+            // Debug
+            // ------------------------------------------
+
+            console.log(
+                "✅ RECETTE YOUTUBE EXTRAITE :",
+                {
+                    name:
+                        recipe.name,
+
+                    prepTime:
+                        recipe.prepTime,
+
+                    cookTime:
+                        recipe.cookTime,
+
+                    portions:
+                        recipe.portions,
+
+                    ingredients:
+                        recipe.ingredients.length,
+
+                    steps:
+                        recipe.steps.length
+                }
+            );
+
+
+            return res.json(
+                recipe
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "❌ Erreur import vidéo :",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Impossible d'analyser cette vidéo YouTube.",
+
+                    details:
+                        error.message
+                });
+        }
+    }
+);
 
 // ======================================================
 // Démarrage du serveur

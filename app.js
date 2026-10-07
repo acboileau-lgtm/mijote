@@ -229,12 +229,15 @@ const cancelImport = $("#cancelImport");
 const importRecipeText = $("#importRecipeText");
 
 const importTextMode = $("#importTextMode");
+const importYoutubeMode = $("#importYoutubeMode");
 const importLinkMode = $("#importLinkMode");
 
 const importTextSection = $("#importTextSection");
+const importYoutubeSection = $("#importYoutubeSection");
 const importLinkSection = $("#importLinkSection");
 
 const importRecipeUrl = $("#importRecipeUrl");
+const importYoutubeUrl = $("#importYoutubeUrl");
 
 
 let currentRecipePhoto = "";
@@ -302,9 +305,11 @@ recipePhotoInput.addEventListener("change", () => {
 importTextMode.addEventListener("click", () => {
 
   importTextMode.classList.add("active");
+  importYoutubeMode.classList.remove("active");
   importLinkMode.classList.remove("active");
 
   importTextSection.classList.remove("hidden");
+  importYoutubeSection.classList.add("hidden");
   importLinkSection.classList.add("hidden");
 
   requestAnimationFrame(() => {
@@ -313,13 +318,31 @@ importTextMode.addEventListener("click", () => {
 });
 
 
+importYoutubeMode.addEventListener("click", () => {
+
+  importYoutubeMode.classList.add("active");
+  importTextMode.classList.remove("active");
+  importLinkMode.classList.remove("active");
+
+  importYoutubeSection.classList.remove("hidden");
+  importTextSection.classList.add("hidden");
+  importLinkSection.classList.add("hidden");
+
+  requestAnimationFrame(() => {
+    importYoutubeUrl.focus();
+  });
+});
+
+
 importLinkMode.addEventListener("click", () => {
 
   importLinkMode.classList.add("active");
   importTextMode.classList.remove("active");
+  importYoutubeMode.classList.remove("active");
 
   importLinkSection.classList.remove("hidden");
   importTextSection.classList.add("hidden");
+  importYoutubeSection.classList.add("hidden");
 
   requestAnimationFrame(() => {
     importRecipeUrl.focus();
@@ -624,6 +647,242 @@ startImport.addEventListener("click", async () => {
     return;
   }
 
+  // ==================================================
+  // MODE YOUTUBE
+  // ==================================================
+
+  if (!importYoutubeSection.classList.contains("hidden")) {
+
+    const youtubeUrl =
+      importYoutubeUrl.value.trim();
+
+    if (!youtubeUrl) {
+
+      alert(
+        "Veuillez saisir le lien d'une vidéo YouTube."
+      );
+
+      importYoutubeUrl.focus();
+
+      return;
+    }
+
+
+    // Vérification simple de l'URL
+    let parsedYoutubeUrl;
+
+    try {
+
+      parsedYoutubeUrl =
+        new URL(youtubeUrl);
+
+    } catch {
+
+      alert(
+        "Le lien YouTube saisi n'est pas valide."
+      );
+
+      importYoutubeUrl.focus();
+
+      return;
+    }
+
+
+    const hostname =
+      parsedYoutubeUrl.hostname.toLowerCase();
+
+    const isYouTube =
+      hostname === "youtube.com" ||
+      hostname === "www.youtube.com" ||
+      hostname === "youtu.be" ||
+      hostname === "www.youtu.be";
+
+    if (!isYouTube) {
+
+      alert(
+        "Veuillez saisir un lien YouTube."
+      );
+
+      importYoutubeUrl.focus();
+
+      return;
+    }
+
+
+    // --------------------------------------------------
+    // Désactive temporairement le bouton
+    // --------------------------------------------------
+
+    startImport.disabled = true;
+    startImport.textContent =
+      "Analyse de la vidéo…";
+
+
+    try {
+
+      console.log(
+        "🎬 Import depuis YouTube :",
+        youtubeUrl
+      );
+
+
+      const response =
+        await fetch(
+          `https://mijote-api.onrender.com/api/import-video?url=${encodeURIComponent(youtubeUrl)}`
+        );
+
+
+      const data =
+        await response.json();
+
+
+      // ------------------------------------------------
+      // Erreur renvoyée par le serveur
+      // ------------------------------------------------
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.error ||
+          "Impossible d'analyser cette vidéo YouTube."
+        );
+      }
+
+
+      console.log(
+        "✅ Recette YouTube récupérée :",
+        data
+      );
+
+
+      // ------------------------------------------------
+      // Transformation en recette Mijoté
+      // ------------------------------------------------
+
+      const recipe =
+        createRecipe({
+
+          name:
+            data.name || "",
+
+          photo:
+            data.image || "",
+
+          prepTime:
+            Number(
+              data.prepTime || 0
+            ),
+
+          cookTime:
+            Number(
+              data.cookTime || 0
+            ),
+
+          restTime: 0,
+
+          portions:
+            Number(
+              data.portions || 0
+            ),
+
+          ingredients:
+            parseImportedIngredients(
+              Array.isArray(data.ingredients)
+                ? data.ingredients
+                : []
+            ),
+
+          steps:
+            Array.isArray(
+              data.steps
+            )
+              ? data.steps
+              : [],
+
+          categories:
+            data.category
+              ? [data.category]
+              : [],
+
+          notes:
+            data.notes || "",
+
+          equipment: [],
+
+          occasion: [],
+
+          source:
+            data.source || {
+              type: "youtube",
+              value: youtubeUrl
+            }
+        });
+
+
+      // ------------------------------------------------
+      // Ferme la fenêtre d'import
+      // ------------------------------------------------
+
+      importModal.classList.add("hidden");
+
+
+      // ------------------------------------------------
+      // Prépare le formulaire en mode AJOUT
+      // ------------------------------------------------
+
+      delete recipeForm.dataset.recipeId;
+
+      $("#recipeModalTitle").textContent =
+        "Ajouter la recette";
+
+      $("#recipeModalSubtitle").textContent =
+        recipe.name;
+
+      $("#saveRecipe").textContent =
+        "Ajouter";
+
+
+      // ------------------------------------------------
+      // Charge les données importées
+      // ------------------------------------------------
+
+      loadRecipe(recipe);
+
+
+      // ------------------------------------------------
+      // Ouvre le formulaire
+      // ------------------------------------------------
+
+      recipeModal.classList.remove("hidden");
+
+    } catch (error) {
+
+      console.error(
+        "❌ Erreur import YouTube :",
+        error
+      );
+
+      alert(
+        error.message ||
+        "Impossible d'analyser cette vidéo YouTube."
+      );
+
+    } finally {
+
+      startImport.disabled = false;
+
+      startImport.textContent =
+        "Importer";
+
+    }
+
+    return;
+  }
+
+
+  // ==================================================
+  // MODE LIEN
+  // ==================================================
 
   // ==================================================
   // MODE LIEN
